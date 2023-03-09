@@ -106,7 +106,22 @@ impl Scanner {
                 }
             }
             '/' => {
-                if self.match_char('/') {
+                if self.match_char('*') {
+                    // A comment goes until "*/".
+                    while self.peek() != '*' && self.peek_next() != '/' && !self.is_at_end() {
+                        if self.peek() == '\n' {
+                            self.line += 1;
+                        }
+                        self.advance();
+                    }
+                    if self.is_at_end() {
+                        error(self.line, "Unterminated comment.".to_string());
+                        return;
+                    }
+                    // advance past the "*/"
+                    self.advance();
+                    self.advance();
+                } else if self.match_char('/') {
                     // A comment goes until the end of the line.
                     while self.peek() != '\n' && !self.is_at_end() {
                         self.advance();

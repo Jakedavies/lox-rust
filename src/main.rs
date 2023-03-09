@@ -9,7 +9,8 @@ fn run(source: String) {
     // create a parser
     let tokens = scanner.scan_tokens();
 
-    for token in tokens {
+    // print all but last token
+    for token in tokens.iter().take(tokens.len() - 1){
         println!("{:?}", token);
     }
 }
@@ -31,6 +32,7 @@ fn run_prompt() {
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).expect("Failed to read line");
         // run the input
+        print!("> {}", input);
         run(input);
     }
 }

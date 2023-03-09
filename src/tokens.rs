@@ -68,6 +68,6 @@ impl Token {
 
 impl std::fmt::Debug for Token {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?} {}", self.token_type, self.lexeme)
+        write!(f, "TokenType({:?}) Lexeme({})", self.token_type, self.lexeme)
     }
 }
