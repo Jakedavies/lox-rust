@@ -1,7 +1,8 @@
-
 mod tokens;
 mod scanner;
 mod error;
+mod tree;
+mod parser;
 
 fn run(source: String) {
     // create a scanner
@@ -9,10 +10,10 @@ fn run(source: String) {
     // create a parser
     let tokens = scanner.scan_tokens();
 
+    let mut parser = parser::Parser::new(tokens);
+    let tree = parser.parse();
     // print all but last token
-    for token in tokens.iter().take(tokens.len() - 1){
-        println!("{:?}", token);
-    }
+    tree.print(0)
 }
 
 
