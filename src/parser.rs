@@ -1,4 +1,4 @@
-use crate::{tokens::{Token, TokenType}, tree::{Node, Literal}};
+use crate::{tokens::{Token, TokenType}, tree::{Evaluatable, Literal}, expressions::{literal_expression::LiteralExpression, grouping_expression::GroupingExpression, unary_expression::UnaryExpression, binary_expression::BinaryExpression}};
 
 
 pub struct Parser {
@@ -14,21 +14,21 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Node {
+    pub fn parse(&mut self) -> dyn Evaluatable {
         return self.expression();
     }
 
-    fn expression (&mut self) -> Node {
+    fn expression (&mut self) -> dyn Evaluatable {
         return self.equality();
     }
 
-    fn equality (&mut self) -> Node {
+    fn equality (&mut self) -> dyn Evaluatable {
         let mut expr = self.comparison();
 
         while self.match_tokens(vec![TokenType::BangEqual, TokenType::EqualEqual]) {
             let op = self.previous().clone();
             let right = self.comparison();
-            expr = Node::BinaryExpr {
+            expr = BinaryExpression {
                 op,
                 left: Box::new(expr),
                 right: Box::new(right),
@@ -38,13 +38,13 @@ impl Parser {
         return expr;
     }
 
-    fn comparison (&mut self) -> Node {
+    fn comparison (&mut self) -> dyn Evaluatable {
         let mut expr = self.term();
 
         while self.match_tokens(vec![TokenType::Greater, TokenType::GreaterEqual, TokenType::Less, TokenType::LessEqual]) {
             let op = self.previous().clone();
             let right = self.term();
-            expr = Node::BinaryExpr {
+            expr = BinaryExpression {
                 op,
                 left: Box::new(expr),
                 right: Box::new(right),
@@ -54,13 +54,13 @@ impl Parser {
         return expr;
     }
 
-    fn term (&mut self) -> Node {
+    fn term (&mut self) -> dyn Evaluatable {
         let mut expr = self.factor();
 
         while self.match_tokens(vec![TokenType::Minus, TokenType::Plus]) {
             let op = self.previous().clone();
             let right = self.factor();
-            expr = Node::BinaryExpr {
+            expr = BinaryExpression {
                 op,
                 left: Box::new(expr),
                 right: Box::new(right),
@@ -70,13 +70,13 @@ impl Parser {
         return expr;
     }
 
-    fn factor (&mut self) -> Node {
+    fn factor (&mut self) -> dyn Evaluatable {
         let mut expr = self.unary();
 
         while self.match_tokens(vec![TokenType::Slash, TokenType::Star]) {
             let op = self.previous().clone();
             let right = self.unary();
-            expr = Node::BinaryExpr {
+            expr = BinaryExpression {
                 op,
                 left: Box::new(expr),
                 right: Box::new(right),
@@ -86,11 +86,11 @@ impl Parser {
         return expr;
     }
 
-    fn unary (&mut self) -> Node {
+    fn unary (&mut self) -> dyn Evaluatable {
         if self.match_tokens(vec![TokenType::Bang, TokenType::Minus]) {
             let op = self.previous().clone();
             let right = self.unary();
-            return Node::UnaryExpr {
+            return UnaryExpression {
                 op,
                 child: Box::new(right),
             };
@@ -99,31 +99,31 @@ impl Parser {
         return self.primary();
     }
 
-    fn primary (&mut self) -> Node {
+    fn primary (&mut self) -> dyn Evaluatable {
         match &self.tokens[self.pos].token_type {
             TokenType::False => {
                 self.advance();
-                return Node::LiteralExpr {
+                return LiteralExpression {
                     value: Literal::Boolean(false),
                 };
             }
             TokenType::True => {
                 self.advance();
-                return Node::LiteralExpr {
+                return LiteralExpression {
                     value: Literal::Boolean(true),
                 };
             }
             TokenType::Number(val) => {
                 let v = val.clone();
                 self.advance();
-                return Node::LiteralExpr {
+                return LiteralExpression {
                     value: Literal::Number(v),
                 };
             }
             TokenType::String(val) => {
                 let v = val.clone();
                 self.advance();
-                return Node::LiteralExpr {
+                return LiteralExpression {
                     value: Literal::String(v),
                 };
             }
@@ -131,7 +131,7 @@ impl Parser {
                 self.advance();
                 let expr = self.expression();
                 self.consume(TokenType::RightParen, "Expect ')' after expression.");
-                return Node::GroupingExpr {
+                return GroupingExpression {
                     child: Box::new(expr),
                 };
             }

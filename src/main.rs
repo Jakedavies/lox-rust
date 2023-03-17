@@ -1,8 +1,11 @@
+use tree::Expression;
+
 mod tokens;
 mod scanner;
 mod error;
 mod tree;
 mod parser;
+mod expressions;
 
 fn run(source: String) {
     // create a scanner
@@ -13,10 +16,21 @@ fn run(source: String) {
     let mut parser = parser::Parser::new(tokens);
     let tree = parser.parse();
     // print all but last token
-    tree.print(0)
+    tree.print(0);
+    println!("> {} ", tree.evaluate());
 }
 
-
+fn print_ast(node: dyn Expression, indent: usize) {
+    // print the node
+    for _ in 0..indent {
+        print!("  ");
+    }
+    println!("{:?}", node);
+    // print the children
+    for child in node.children() {
+        print_ast(child, indent + 2);
+    }
+}
 
 
 fn run_file(filename: String) {
