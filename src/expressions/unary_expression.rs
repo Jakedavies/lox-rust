@@ -7,6 +7,12 @@ pub struct UnaryExpression {
     child: Box<dyn Expression>,
 }
 
+impl UnaryExpression {
+    pub fn new(op: Token, child: Box<dyn Expression>) -> Self {
+        Self { op, child }
+    }
+}
+
 impl Expression for UnaryExpression {
     fn evaluate(&self) -> Literal {
         let child = self.child.evaluate();
@@ -29,5 +35,9 @@ impl Expression for UnaryExpression {
                 panic!("Unexpected token: {:?}", self.op);
             }
         }
+    }
+
+    fn children(&self) -> Vec<&Box<dyn Expression>> {
+        vec![&self.child]
     }
 }

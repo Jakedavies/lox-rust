@@ -1,14 +1,20 @@
-use crate::{tokens::Token, tree::Evaluatable};
+use crate::{tokens::{Token, TokenType}, tree::{Expression, Literal}};
 
 
 #[derive(Debug)]
 pub struct BinaryExpression {
     op: Token,
-    left: Box<dyn Evaluatable>,
-    right: Box<dyn Evaluatable>,
+    left: Box<dyn Expression>,
+    right: Box<dyn Expression>,
 }
 
-impl Evaluatable for BinaryExpression {
+impl BinaryExpression {
+    pub fn new(op: Token, left: Box<dyn Expression>, right: Box<dyn Expression>) -> Self {
+        Self { op, left, right }
+    }
+}
+
+impl Expression for BinaryExpression {
     fn evaluate(&self) -> Literal {
         let left = self.left.evaluate();
         let right = self.right.evaluate();
@@ -105,6 +111,10 @@ impl Evaluatable for BinaryExpression {
                 panic!("Unexpected token: {:?}", self.op);
             }
         }
+    }
+
+    fn children(&self) -> Vec<&Box<dyn Expression>> {
+        vec![&self.left, &self.right]
     }
 }
 

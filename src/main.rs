@@ -15,12 +15,13 @@ fn run(source: String) {
 
     let mut parser = parser::Parser::new(tokens);
     let tree = parser.parse();
-    // print all but last token
-    tree.print(0);
+    // dump the AST
+    print_ast(&tree, 0);
+    // print the result
     println!("> {} ", tree.evaluate());
 }
 
-fn print_ast(node: dyn Expression, indent: usize) {
+fn print_ast(node: &Box<dyn Expression>, indent: usize) {
     // print the node
     for _ in 0..indent {
         print!("  ");
@@ -47,7 +48,7 @@ fn run_prompt() {
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).expect("Failed to read line");
         // run the input
-        print!("> {}", input);
+        //print!("> {}", input);
         run(input);
     }
 }

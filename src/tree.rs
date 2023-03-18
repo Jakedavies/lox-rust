@@ -1,8 +1,6 @@
+use std::any::Any;
 use std::fmt::Debug;
 use std::{fmt, default};
-
-use crate::tokens::{Token, TokenType};
-use crate::expressions::literal_expression::LiteralExpression;
 
 #[derive(Debug, Clone)]
 pub enum Literal{
@@ -21,12 +19,7 @@ impl fmt::Display for Literal {
     }
 }
 
-pub trait Expression {
+pub trait Expression: std::fmt::Debug {
     fn evaluate(&self) -> Literal;
-}
-
-impl Debug for dyn Expression {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Evaluatable")
-    }
+    fn children(&self) -> Vec<&Box<dyn Expression>>;
 }
