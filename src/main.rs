@@ -1,11 +1,11 @@
-use tree::Expression;
+use expressions::expressions::Expression;
 
 mod tokens;
 mod scanner;
 mod error;
-mod tree;
 mod parser;
 mod expressions;
+mod interpreter;
 
 fn run(source: String) {
     // create a scanner
@@ -23,6 +23,7 @@ fn run(source: String) {
     }
 }
 
+// helper method for debugging AST
 fn print_ast(node: &Box<dyn Expression>, indent: usize) {
     // print the node
     for _ in 0..indent {

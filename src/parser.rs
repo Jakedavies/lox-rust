@@ -1,4 +1,23 @@
-use crate::{tokens::{Token, TokenType}, tree::{Expression, Literal}, expressions::{literal_expression::LiteralExpression, grouping_expression::GroupingExpression, unary_expression::UnaryExpression, binary_expression::BinaryExpression}};
+use std::fmt;
+
+use crate::{tokens::{Token, TokenType}, expressions::{literal_expression::LiteralExpression, grouping_expression::GroupingExpression, unary_expression::UnaryExpression, binary_expression::BinaryExpression, expressions::Expression}};
+
+#[derive(Debug, Clone)]
+pub enum Literal{
+    Number(f64),
+    String(String),
+    Boolean(bool),
+}
+
+impl fmt::Display for Literal {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Literal::Number(n) => write!(f, "{}", n),
+            Literal::String(s) => write!(f, "{}", s),
+            Literal::Boolean(b) => write!(f, "{}", b),
+        }
+    }
+}
 
 
 pub struct Parser {

@@ -1,4 +1,5 @@
-use crate::{tokens::{Token, TokenType}, tree::{Expression, Literal, RuntimeError}};
+use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::RuntimeError};
+use super::expressions::Expression;
 
 
 #[derive(Debug)]
