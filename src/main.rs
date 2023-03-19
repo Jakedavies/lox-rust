@@ -6,6 +6,15 @@ mod error;
 mod parser;
 mod expressions;
 mod interpreter;
+mod statement;
+
+fn interpret(statements: Vec<Box<dyn statement::Statement>>) {
+    for statement in statements {
+        if let Err(e) = statement.execute() {
+            println!("RuntimeError: {}", e.message);
+        }
+    }
+}
 
 fn run(source: String) {
     // create a scanner
@@ -13,14 +22,16 @@ fn run(source: String) {
     // create a parser
     let tokens = scanner.scan_tokens();
 
+    println!("Tokens:");
+    for token in tokens {
+        println!("{:?}", token);
+    }
+
     let mut parser = parser::Parser::new(tokens);
     let tree = parser.parse();
+
     // print the result
-    if let Err(e) = tree.evaluate() {
-        println!("RuntimeError: {}", e.message);
-    } else {
-        println!("> {}", tree.evaluate().unwrap());
-    }
+    interpret(tree)
 }
 
 // helper method for debugging AST

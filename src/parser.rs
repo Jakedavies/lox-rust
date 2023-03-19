@@ -1,6 +1,8 @@
 use std::fmt;
 
-use crate::{tokens::{Token, TokenType}, expressions::{literal_expression::LiteralExpression, grouping_expression::GroupingExpression, unary_expression::UnaryExpression, binary_expression::BinaryExpression, expressions::Expression}};
+use crate::{
+    statement::{Statement, PrintStatement, ExpressionStatement},
+    tokens::{Token, TokenType}, expressions::{literal_expression::LiteralExpression, grouping_expression::GroupingExpression, unary_expression::UnaryExpression, binary_expression::BinaryExpression, expressions::Expression}};
 
 #[derive(Debug, Clone)]
 pub enum Literal{
@@ -33,8 +35,32 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Box<dyn Expression> {
-        return self.expression();
+    pub fn parse(&mut self) -> Vec<Box<dyn Statement>> {
+        let mut statements: Vec<Box<dyn Statement>> = vec![];
+        while !self.is_at_end() {
+            statements.push(self.statement());
+        }
+        return statements
+    }
+
+    fn statement(&mut self) -> Box<dyn Statement> {
+        if self.match_tokens(vec![TokenType::Print]) {
+            return self.print_statement();
+        }
+
+        return self.expression_statement();
+    }
+
+    fn print_statement (&mut self) -> Box<dyn Statement> {
+        let value = self.expression();
+        self.consume(TokenType::Semicolon, "Expect ';' after value.");
+        return Box::new(PrintStatement::new(value));
+    }
+
+    fn expression_statement (&mut self) -> Box<dyn Statement> {
+        let expr = self.expression();
+        self.consume(TokenType::Semicolon, "Expect ';' after expression.");
+        return Box::new(ExpressionStatement::new(expr));
     }
 
     fn expression (&mut self) -> Box<dyn Expression> {
