@@ -19,7 +19,18 @@ impl fmt::Display for Literal {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct RuntimeError {
+    pub message: String,
+}
+
+impl RuntimeError {
+    pub fn new(message: String) -> Self {
+        Self { message }
+    }
+}
+
 pub trait Expression: std::fmt::Debug {
-    fn evaluate(&self) -> Literal;
+    fn evaluate(&self) -> Result<Literal, RuntimeError>;
     fn children(&self) -> Vec<&Box<dyn Expression>>;
 }

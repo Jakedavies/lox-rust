@@ -1,4 +1,4 @@
-use crate::tree::{Expression, Literal};
+use crate::tree::{Expression, Literal, RuntimeError};
 
 
 #[derive(Debug)]
@@ -13,7 +13,7 @@ impl GroupingExpression {
 }
 
 impl Expression for GroupingExpression {
-    fn evaluate(&self) -> Literal {
+    fn evaluate(&self) -> Result<Literal, RuntimeError> {
         self.child.evaluate()
     }
 

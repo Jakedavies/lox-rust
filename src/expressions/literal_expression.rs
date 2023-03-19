@@ -1,4 +1,4 @@
-use crate::tree::{Literal, Expression};
+use crate::tree::{Literal, Expression, RuntimeError};
 
 #[derive(Debug)]
 pub struct LiteralExpression {
@@ -12,8 +12,8 @@ impl LiteralExpression {
 }
 
 impl Expression for LiteralExpression {
-    fn evaluate(&self) -> Literal {
-        self.value.clone()
+    fn evaluate(&self) -> Result<Literal, RuntimeError> {
+        Ok(self.value.clone())
     }
 
     fn children(&self) -> Vec<&Box<dyn Expression>> {

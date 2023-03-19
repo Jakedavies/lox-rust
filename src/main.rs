@@ -15,10 +15,12 @@ fn run(source: String) {
 
     let mut parser = parser::Parser::new(tokens);
     let tree = parser.parse();
-    // dump the AST
-    print_ast(&tree, 0);
     // print the result
-    println!("> {} ", tree.evaluate());
+    if let Err(e) = tree.evaluate() {
+        println!("RuntimeError: {}", e.message);
+    } else {
+        println!("> {}", tree.evaluate().unwrap());
+    }
 }
 
 fn print_ast(node: &Box<dyn Expression>, indent: usize) {

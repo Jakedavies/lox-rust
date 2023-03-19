@@ -1,4 +1,4 @@
-use crate::{tree::{Expression, Literal}, tokens::{Token, TokenType}};
+use crate::{tree::{Expression, Literal, RuntimeError}, tokens::{Token, TokenType}};
 
 
 #[derive(Debug)]
@@ -14,21 +14,21 @@ impl UnaryExpression {
 }
 
 impl Expression for UnaryExpression {
-    fn evaluate(&self) -> Literal {
-        let child = self.child.evaluate();
+    fn evaluate(&self) -> Result<Literal, RuntimeError> {
+        let child = self.child.evaluate()?;
         match &self.op.token_type {
             TokenType::Minus => {
                 if let Literal::Number(n) = child {
-                    return Literal::Number(-n);
+                    return Ok(Literal::Number(-n));
                 }
 
                 panic!("Expected number, got: {:?}", child);
             }
             TokenType::Bang => {
                 return match child {
-                    Literal::Boolean(b) => Literal::Boolean(!b),
-                    Literal::Number(n) => Literal::Boolean(n == 0.0),
-                    Literal::String(s) => Literal::Boolean(s.len() == 0),
+                    Literal::Boolean(b) => Ok(Literal::Boolean(!b)),
+                    Literal::Number(n) => Ok(Literal::Boolean(n == 0.0)),
+                    Literal::String(s) => Ok(Literal::Boolean(s.len() == 0)),
                 };
             }
             _ => {
