@@ -2,7 +2,7 @@ use std::{fmt::{self, Display}};
 
 use crate::{
     statement::{Statement, PrintStatement, ExpressionStatement, VarStatement},
-    tokens::{Token, TokenType}, expressions::{literal_expression::LiteralExpression, grouping_expression::GroupingExpression, unary_expression::UnaryExpression, binary_expression::BinaryExpression, expressions::Expression}};
+    tokens::{Token, TokenType}, expressions::{literal_expression::LiteralExpression, grouping_expression::GroupingExpression, unary_expression::UnaryExpression, binary_expression::BinaryExpression, expressions::Expression, var_expression::VarExpression}};
 
 #[derive(Debug, Clone)]
 pub enum Literal{
@@ -192,7 +192,8 @@ impl Parser {
     }
 
     fn primary (&mut self) -> Result<dyn Expression> {
-        match &self.tokens[self.pos].token_type {
+        let token_type = self.tokens[self.pos].token_type.clone();
+        match token_type {
             TokenType::False => {
                 self.advance();
                 return Ok(Box::new(LiteralExpression::new(
@@ -225,6 +226,12 @@ impl Parser {
                 self.consume(TokenType::RightParen, "Expect ')' after expression.");
                 return Ok(Box::new(GroupingExpression::new(
                         expr?
+                )));
+            }
+            TokenType::Idenfitier(val) => {
+                self.advance();
+                return Ok(Box::new(VarExpression::new(
+                    val.clone(),
                 )));
             }
             _ => {

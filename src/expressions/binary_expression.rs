@@ -1,4 +1,4 @@
-use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::RuntimeError};
+use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::RuntimeError, environment::Environment};
 use super::expressions::Expression;
 
 
@@ -16,9 +16,9 @@ impl BinaryExpression {
 }
 
 impl Expression for BinaryExpression {
-    fn evaluate(&self) -> Result<Literal, RuntimeError> {
-        let left = self.left.evaluate()?;
-        let right = self.right.evaluate()?;
+    fn evaluate(&self, env: &mut Environment) -> Result<Literal, RuntimeError> {
+        let left = self.left.evaluate(env)?;
+        let right = self.right.evaluate(env)?;
 
         match &self.op.token_type {
             TokenType::Plus => match (&left, &right) {

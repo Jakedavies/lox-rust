@@ -1,4 +1,4 @@
-use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::RuntimeError};
+use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::RuntimeError, environment::Environment};
 use super::expressions::Expression;
 
 
@@ -15,8 +15,8 @@ impl UnaryExpression {
 }
 
 impl Expression for UnaryExpression {
-    fn evaluate(&self) -> Result<Literal, RuntimeError> {
-        let child = self.child.evaluate()?;
+    fn evaluate(&self, env: &mut Environment) -> Result<Literal, RuntimeError> {
+        let child = self.child.evaluate(env)?;
         match &self.op.token_type {
             TokenType::Minus => {
                 if let Literal::Number(n) = child {

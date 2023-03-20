@@ -7,10 +7,12 @@ mod parser;
 mod expressions;
 mod interpreter;
 mod statement;
+mod environment;
 
 fn interpret(statements: Vec<Box<dyn statement::Statement>>) {
+    let mut env = environment::Environment::new();
     for statement in statements {
-        if let Err(e) = statement.execute() {
+        if let Err(e) = statement.execute(&mut env) {
             println!("RuntimeError: {}", e.message);
         }
     }

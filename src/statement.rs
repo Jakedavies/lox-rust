@@ -1,8 +1,8 @@
-use crate::{expressions::expressions::Expression, interpreter::RuntimeError};
+use crate::{expressions::expressions::Expression, interpreter::RuntimeError, environment::{Environment, self}};
 
 
 pub trait Statement: std::fmt::Debug {
-    fn execute(&self) -> Result<(), RuntimeError>;
+    fn execute(&self, context: &mut Environment) -> Result<(), RuntimeError>;
 }
 
 #[derive(Debug)]
@@ -17,12 +17,13 @@ impl PrintStatement {
 }
 
 impl Statement for PrintStatement {
-    fn execute(&self) -> Result<(), RuntimeError> {
-        let value = self.expression.evaluate()?;
+    fn execute(&self, environment: &mut Environment) -> Result<(), RuntimeError> {
+        let value = self.expression.evaluate(environment)?;
         println!("{}", value);
         Ok(())
     }
 }
+
 
 #[derive(Debug)]
 pub struct ExpressionStatement {
@@ -36,8 +37,8 @@ impl ExpressionStatement {
 }
 
 impl Statement for ExpressionStatement {
-    fn execute(&self) -> Result<(), RuntimeError> {
-        self.expression.evaluate()?;
+    fn execute(&self, environment: &mut Environment) -> Result<(), RuntimeError> {
+        self.expression.evaluate(environment)?;
         Ok(())
     }
 }
@@ -56,10 +57,10 @@ impl VarStatement {
 }
 
 impl Statement for VarStatement {
-    fn execute(&self) -> Result<(), RuntimeError> {
-        let value = self.initializer.evaluate()?;
+    fn execute(&self, environment: &mut Environment) -> Result<(), RuntimeError> {
+        let value = self.initializer.evaluate(environment)?;
         // TODO. Assign this value to the global environment.
-        println!("{} = {}", self.name, value);
+        environment.define(self.name.clone(), value);
         Ok(())
     }
 }

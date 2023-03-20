@@ -1,4 +1,4 @@
-use crate::{parser::Literal, interpreter::RuntimeError};
+use crate::{parser::Literal, interpreter::RuntimeError, environment::Environment};
 use super::expressions::Expression;
 
 
@@ -14,8 +14,8 @@ impl GroupingExpression {
 }
 
 impl Expression for GroupingExpression {
-    fn evaluate(&self) -> Result<Literal, RuntimeError> {
-        self.child.evaluate()
+    fn evaluate(&self, env: &mut Environment) -> Result<Literal, RuntimeError> {
+        self.child.evaluate(env)
     }
 
     fn children(&self) -> Vec<&Box<dyn Expression>> {
