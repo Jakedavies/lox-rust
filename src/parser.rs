@@ -1,7 +1,7 @@
 use std::{fmt::{self, Display}};
 
 use crate::{
-    statement::{Statement, PrintStatement, ExpressionStatement},
+    statement::{Statement, PrintStatement, ExpressionStatement, VarStatement},
     tokens::{Token, TokenType}, expressions::{literal_expression::LiteralExpression, grouping_expression::GroupingExpression, unary_expression::UnaryExpression, binary_expression::BinaryExpression, expressions::Expression}};
 
 #[derive(Debug, Clone)]
@@ -59,7 +59,7 @@ impl Parser {
     pub fn parse(&mut self) -> Vec<Box<dyn Statement>> {
         let mut statements: Vec<Box<dyn Statement>> = vec![];
         while !self.is_at_end() {
-            let result = self.statement();
+            let result = self.declaration();
             if result.is_ok() {
                 statements.push(result.unwrap());
             } else {
@@ -68,6 +68,25 @@ impl Parser {
             }
         }
         return statements
+    }
+
+    fn declaration(&mut self) -> Result<dyn Statement> {
+        if self.match_tokens(vec![TokenType::Var]) {
+            return self.var_declaration();
+        }
+
+        return self.statement();
+    }
+
+    fn var_declaration(&mut self) -> Result<dyn Statement> {
+        let identifier = self.consume(TokenType::Idenfitier("".to_string()), "Expect variable name.");
+        let identifier_lexeme = identifier.lexeme.clone();
+        self.consume(TokenType::Equal, "Expect '=' after variable name.");
+
+        let initializer = self.expression()?;
+
+        self.consume(TokenType::Semicolon, "Expect ';' after variable declaration.");
+        return Ok(Box::new(VarStatement::new(identifier_lexeme, initializer)));
     }
 
     fn statement(&mut self) -> Result<dyn Statement> {
@@ -89,6 +108,7 @@ impl Parser {
         self.consume(TokenType::Semicolon, "Expect ';' after expression.");
         return Ok(Box::new(ExpressionStatement::new(expr)));
     }
+
 
     fn expression (&mut self) -> Result<dyn Expression> {
         return self.equality();
@@ -234,7 +254,7 @@ impl Parser {
         if self.is_at_end() {
             return false;
         }
-        self.tokens[self.pos].token_type == token
+        std::mem::discriminant(&self.tokens[self.pos].token_type) == std::mem::discriminant(&token)
     }
 
     fn peek(&self) -> &Token {

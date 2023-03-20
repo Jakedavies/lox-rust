@@ -42,3 +42,24 @@ impl Statement for ExpressionStatement {
     }
 }
 
+
+#[derive(Debug)]
+pub struct VarStatement {
+    name: String,
+    initializer: Box<dyn Expression>,
+}
+
+impl VarStatement {
+    pub fn new(name: String, initializer: Box<dyn Expression>) -> Self {
+        Self { name, initializer }
+    }
+}
+
+impl Statement for VarStatement {
+    fn execute(&self) -> Result<(), RuntimeError> {
+        let value = self.initializer.evaluate()?;
+        // TODO. Assign this value to the global environment.
+        println!("{} = {}", self.name, value);
+        Ok(())
+    }
+}
