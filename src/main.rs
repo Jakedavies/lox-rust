@@ -22,10 +22,6 @@ fn run(source: String) {
     // create a parser
     let tokens = scanner.scan_tokens();
 
-    println!("Tokens:");
-    for token in tokens {
-        println!("{:?}", token);
-    }
 
     let mut parser = parser::Parser::new(tokens);
     let tree = parser.parse();

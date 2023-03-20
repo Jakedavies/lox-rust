@@ -51,8 +51,8 @@ pub enum TokenType {
 #[derive(PartialEq, Clone)]
 pub struct Token {
     pub token_type: TokenType,
-    lexeme: String,
-    line: usize,
+    pub lexeme: String,
+    pub line: usize,
 }
 
 impl Token {
