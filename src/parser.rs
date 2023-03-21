@@ -1,11 +1,18 @@
-use std::{fmt::{self, Display}};
+use std::fmt::{self, Display};
 
 use crate::{
-    statement::{Statement, PrintStatement, ExpressionStatement, VarStatement},
-    tokens::{Token, TokenType}, expressions::{literal_expression::LiteralExpression, grouping_expression::GroupingExpression, unary_expression::UnaryExpression, binary_expression::BinaryExpression, expressions::Expression, var_expression::VarExpression}};
+    expressions::{
+        assignment_expression::AssignmentExpression, binary_expression::BinaryExpression,
+        expressions::Expression, grouping_expression::GroupingExpression,
+        literal_expression::LiteralExpression, unary_expression::UnaryExpression,
+        var_expression::VarExpression,
+    },
+    statement::{ExpressionStatement, PrintStatement, Statement, VarStatement},
+    tokens::{Token, TokenType},
+};
 
 #[derive(Debug, Clone)]
-pub enum Literal{
+pub enum Literal {
     Number(f64),
     String(String),
     Boolean(bool),
@@ -31,7 +38,6 @@ impl Display for ParseError {
 }
 
 type Result<T> = std::result::Result<Box<T>, Box<ParseError>>;
-
 
 impl fmt::Display for Literal {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -67,7 +73,7 @@ impl Parser {
                 panic!("Error: {}", result.err().unwrap());
             }
         }
-        return statements
+        return statements;
     }
 
     fn declaration(&mut self) -> Result<dyn Statement> {
@@ -79,13 +85,19 @@ impl Parser {
     }
 
     fn var_declaration(&mut self) -> Result<dyn Statement> {
-        let identifier = self.consume(TokenType::Idenfitier("".to_string()), "Expect variable name.");
+        let identifier = self.consume(
+            TokenType::Idenfitier("".to_string()),
+            "Expect variable name.",
+        );
         let identifier_lexeme = identifier.lexeme.clone();
         self.consume(TokenType::Equal, "Expect '=' after variable name.");
 
         let initializer = self.expression()?;
 
-        self.consume(TokenType::Semicolon, "Expect ';' after variable declaration.");
+        self.consume(
+            TokenType::Semicolon,
+            "Expect ';' after variable declaration.",
+        );
         return Ok(Box::new(VarStatement::new(identifier_lexeme, initializer)));
     }
 
@@ -97,150 +109,144 @@ impl Parser {
         return self.expression_statement();
     }
 
-    fn print_statement (&mut self) -> Result<dyn Statement> {
+    fn print_statement(&mut self) -> Result<dyn Statement> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after value.");
         return Ok(Box::new(PrintStatement::new(value)));
     }
 
-    fn expression_statement (&mut self) -> Result<dyn Statement> {
+    fn expression_statement(&mut self) -> Result<dyn Statement> {
         let expr = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after expression.");
         return Ok(Box::new(ExpressionStatement::new(expr)));
     }
 
-
-    fn expression (&mut self) -> Result<dyn Expression> {
-        return self.equality();
+    fn expression(&mut self) -> Result<dyn Expression> {
+        return self.assignment();
     }
 
-    fn equality (&mut self) -> Result<dyn Expression> {
+    fn assignment(&mut self) -> Result<dyn Expression> {
+        let expr = self.equality()?;
+
+        if self.match_tokens(vec![TokenType::Equal]) {
+            let equals = self.previous().clone();
+            let value = self.assignment()?;
+
+            // check if expr is a VarExpression
+            if let Some(var_expr) = expr.downcast_ref::<VarExpression>() {
+                let name = var_expr.name.clone();
+                return Ok(Box::new(AssignmentExpression::new(name, value)));
+            }
+
+            return Err(Box::new(ParseError::new(
+                equals,
+                "Invalid assignment target.",
+            )));
+        }
+
+        return Ok(expr);
+    }
+
+    fn equality(&mut self) -> Result<dyn Expression> {
         let mut expr = self.comparison();
 
         while self.match_tokens(vec![TokenType::BangEqual, TokenType::EqualEqual]) {
             let op = self.previous().clone();
             let right = self.comparison();
-            expr = Ok(Box::new(BinaryExpression::new(
-                op,
-                expr?,
-                right?,
-            )));
+            expr = Ok(Box::new(BinaryExpression::new(op, expr?, right?)));
         }
 
         return expr;
     }
 
-    fn comparison (&mut self) -> Result<dyn Expression> {
+    fn comparison(&mut self) -> Result<dyn Expression> {
         let mut expr = self.term();
 
-        while self.match_tokens(vec![TokenType::Greater, TokenType::GreaterEqual, TokenType::Less, TokenType::LessEqual]) {
+        while self.match_tokens(vec![
+            TokenType::Greater,
+            TokenType::GreaterEqual,
+            TokenType::Less,
+            TokenType::LessEqual,
+        ]) {
             let op = self.previous().clone();
             let right = self.term();
-            expr = Ok(Box::new(BinaryExpression::new(
-                op,
-                right?,
-                expr?,
-            )));
+            expr = Ok(Box::new(BinaryExpression::new(op, right?, expr?)));
         }
 
         return expr;
     }
 
-    fn term (&mut self) -> Result<dyn Expression> {
+    fn term(&mut self) -> Result<dyn Expression> {
         let mut expr = self.factor();
 
         while self.match_tokens(vec![TokenType::Minus, TokenType::Plus]) {
             let op = self.previous().clone();
             let right = self.factor();
-            expr = Ok(Box::new(BinaryExpression::new(
-                op,
-                right?,
-                expr?
-            )));
+            expr = Ok(Box::new(BinaryExpression::new(op, right?, expr?)));
         }
 
         return expr;
     }
 
-    fn factor (&mut self) -> Result<dyn Expression> {
+    fn factor(&mut self) -> Result<dyn Expression> {
         let mut expr = self.unary();
 
         while self.match_tokens(vec![TokenType::Slash, TokenType::Star]) {
             let op = self.previous().clone();
             let right = self.unary();
-            expr = Ok(Box::new(BinaryExpression::new(
-                op,
-                right?,
-                expr?
-            )));
+            expr = Ok(Box::new(BinaryExpression::new(op, right?, expr?)));
         }
 
         return expr;
     }
 
-    fn unary (&mut self) -> Result<dyn Expression> {
+    fn unary(&mut self) -> Result<dyn Expression> {
         if self.match_tokens(vec![TokenType::Bang, TokenType::Minus]) {
             let op = self.previous().clone();
             let right = self.unary();
-            return Ok(Box::new(UnaryExpression::new(
-                op,
-                right?
-            )));
+            return Ok(Box::new(UnaryExpression::new(op, right?)));
         }
 
         return self.primary();
     }
 
-    fn primary (&mut self) -> Result<dyn Expression> {
+    fn primary(&mut self) -> Result<dyn Expression> {
         let token_type = self.tokens[self.pos].token_type.clone();
         match token_type {
             TokenType::False => {
                 self.advance();
-                return Ok(Box::new(LiteralExpression::new(
-                    Literal::Boolean(false),
-                )));
+                return Ok(Box::new(LiteralExpression::new(Literal::Boolean(false))));
             }
             TokenType::True => {
                 self.advance();
-                return Ok(Box::new(LiteralExpression::new(
-                    Literal::Boolean(true),
-                )));
+                return Ok(Box::new(LiteralExpression::new(Literal::Boolean(true))));
             }
             TokenType::Number(val) => {
                 let v = val.clone();
                 self.advance();
-                return Ok(Box::new(LiteralExpression::new(
-                    Literal::Number(v),
-                )));
+                return Ok(Box::new(LiteralExpression::new(Literal::Number(v))));
             }
             TokenType::String(val) => {
                 let v = val.clone();
                 self.advance();
-                return Ok(Box::new(LiteralExpression::new(
-                    Literal::String(v),
-                )));
+                return Ok(Box::new(LiteralExpression::new(Literal::String(v))));
             }
             TokenType::LeftParen => {
                 self.advance();
                 let expr = self.expression();
                 self.consume(TokenType::RightParen, "Expect ')' after expression.");
-                return Ok(Box::new(GroupingExpression::new(
-                        expr?
-                )));
+                return Ok(Box::new(GroupingExpression::new(expr?)));
             }
             TokenType::Idenfitier(val) => {
                 self.advance();
-                return Ok(Box::new(VarExpression::new(
-                    val.clone(),
-                )));
+                return Ok(Box::new(VarExpression::new(val.clone())));
             }
             _ => {
                 return Err(Box::new(ParseError::new(
                     self.peek().clone(),
-                    "Expect expression."
+                    "Expect expression.",
                 )));
             }
-
         }
     }
 
@@ -268,7 +274,7 @@ impl Parser {
         &self.tokens[self.pos]
     }
 
-    fn previous (&self) -> &Token {
+    fn previous(&self) -> &Token {
         &self.tokens[self.pos - 1]
     }
 

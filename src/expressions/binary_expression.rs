@@ -77,4 +77,8 @@ impl Expression for BinaryExpression {
     fn children(&self) -> Vec<&Box<dyn Expression>> {
         vec![&self.left, &self.right]
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }

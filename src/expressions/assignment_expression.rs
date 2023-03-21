@@ -4,22 +4,26 @@ use super::expressions::Expression;
 
 
 #[derive(Debug)]
-pub struct VarExpression {
+pub struct AssignmentExpression {
     pub name: String,
+    child: Box<dyn Expression>,
 }
 
-impl VarExpression {
-    pub fn new(name: String) -> Self {
-        Self { name }
+impl AssignmentExpression {
+    pub fn new(name: String, child: Box<dyn Expression>) -> Self {
+        Self { name, child }
     }
 }
 
-impl Expression for VarExpression {
+impl Expression for AssignmentExpression {
     fn evaluate(&self, environment: &mut Environment) -> Result<Literal, RuntimeError> {
-        environment.get(&self.name).cloned()
+        let v = self.child.evaluate(environment)?;
+        environment.set(&self.name, v.clone())?;
+        Ok(v.clone())
     }
+
     fn children(&self) -> Vec<&Box<dyn Expression>> {
-        vec![]
+        vec![&self.child]
     }
 
     fn as_any(&self) -> &dyn std::any::Any {

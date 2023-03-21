@@ -20,4 +20,8 @@ impl Expression for LiteralExpression {
     fn children(&self) -> Vec<&Box<dyn Expression>> {
         vec![]
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }

@@ -1,3 +1,7 @@
 // test
 var test = "hi the variable has a value";
 print test;
+
+test = "variable has a new value";
+
+print test;

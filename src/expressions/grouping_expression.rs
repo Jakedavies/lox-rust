@@ -21,4 +21,8 @@ impl Expression for GroupingExpression {
     fn children(&self) -> Vec<&Box<dyn Expression>> {
         vec![&self.child]
     }
+
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
 }
