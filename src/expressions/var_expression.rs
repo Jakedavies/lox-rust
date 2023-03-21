@@ -16,7 +16,7 @@ impl VarExpression {
 
 impl Expression for VarExpression {
     fn evaluate(&self, environment: &mut Environment) -> Result<Literal, RuntimeError> {
-        environment.get(&self.name).cloned()
+        environment.get(&self.name)
     }
     fn children(&self) -> Vec<&Box<dyn Expression>> {
         vec![]
