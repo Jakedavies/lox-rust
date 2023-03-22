@@ -7,7 +7,7 @@ use crate::{
         literal_expression::LiteralExpression, unary_expression::UnaryExpression,
         var_expression::VarExpression,
     },
-    statement::{ExpressionStatement, PrintStatement, Statement, VarStatement},
+    statement::{ExpressionStatement, PrintStatement, Statement, VarStatement, BlockStatement},
     tokens::{Token, TokenType},
 };
 
@@ -105,6 +105,9 @@ impl Parser {
         if self.match_tokens(vec![TokenType::Print]) {
             return self.print_statement();
         }
+        if self.match_tokens(vec![TokenType::LeftBrace]) {
+            return self.block_statement();
+        }
 
         return self.expression_statement();
     }
@@ -113,6 +116,21 @@ impl Parser {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after value.");
         return Ok(Box::new(PrintStatement::new(value)));
+    }
+
+    fn block_statement(&mut self) -> Result<dyn Statement> {
+        let mut statements: Vec<Box<dyn Statement>> = vec![];
+        while !self.check(TokenType::RightBrace) && !self.is_at_end() {
+            let result = self.declaration();
+            if result.is_ok() {
+                statements.push(result.unwrap());
+            } else {
+                panic!("Error: {}", result.err().unwrap());
+            }
+        }
+
+        self.consume(TokenType::RightBrace, "Expect '}' after block.");
+        return Ok(Box::new(BlockStatement::new(statements)));
     }
 
     fn expression_statement(&mut self) -> Result<dyn Statement> {

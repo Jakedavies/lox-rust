@@ -1,28 +1,14 @@
-use std::{collections::HashMap, cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{parser::Literal, interpreter::RuntimeError};
+use crate::{interpreter::RuntimeError, parser::Literal};
 
-
-
-pub struct Environment {
-    parent : Option<Rc<RefCell<Environment>>>,
+pub struct EnvironmentNode {
     pub values: HashMap<String, Literal>,
+    pub parent: Option<Rc<RefCell<EnvironmentNode>>>,
 }
 
-impl Environment {
-    pub fn new() -> Self {
-        Self {
-            parent: None,
-            values: HashMap::new(),
-        }
-    }
 
-    pub fn enclosed(mut self) -> Self {
-        let mut n = Self::new();
-        n.parent = Some(Rc::new(RefCell::new(self)));
-        return n
-    }
-
+impl EnvironmentNode {
     pub fn define(&mut self, name: String, value: Literal) {
         self.values.insert(name, value);
     }
@@ -45,10 +31,52 @@ impl Environment {
             (_, Some(parent)) => {
                 let p = parent.borrow();
                 let v = p.get(name)?;
-                return Ok(v.to_owned().clone())
+                return Ok(v.to_owned().clone());
             }
         }
     }
+}
+
+pub struct Environment {
+    e: Rc<RefCell<EnvironmentNode>>,
+}
+
+impl Clone for Environment {
+    fn clone(&self) -> Self {
+        Environment {
+            e: Rc::clone(&self.e)
+        }
+    }
+}
+
+impl Environment {
+    pub fn new() -> Environment {
+        Environment {
+            e: Rc::new(RefCell::new(EnvironmentNode {
+                parent: None,
+                values: HashMap::new(),
+            })),
+        }
+    }
+
+    pub fn define (&mut self, name: String, value: Literal) {
+        self.e.borrow_mut().define(name, value);
+    }
+
+    pub fn set(&mut self, name: &String, value: Literal) -> Result<(), RuntimeError> {
+        self.e.borrow_mut().set(name, value)
+    }
+
+    pub fn get(&self, name: &String) -> Result<Literal, RuntimeError> {
+        self.e.borrow().get(name)
+    }
+
+    pub fn enclosed(&mut self) -> Self {
+        let n = Self::new();
+        n.e.borrow_mut().parent = Some(self.e.clone());
+        return n;
+    }
+    
 }
 
 // tests

@@ -1,3 +1,4 @@
+
 use crate::{expressions::expressions::Expression, interpreter::RuntimeError, environment::{Environment, self}};
 
 
@@ -61,6 +62,24 @@ impl Statement for VarStatement {
         let value = self.initializer.evaluate(environment)?;
         // TODO. Assign this value to the global environment.
         environment.define(self.name.clone(), value);
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct BlockStatement {
+    statements: Vec<Box<dyn Statement>>,
+}
+
+impl BlockStatement {
+    pub fn new(statements: Vec<Box<dyn Statement>>) -> Self {
+        Self { statements }
+    }
+}
+
+impl Statement for BlockStatement {
+    fn execute(&self, environment: &mut Environment) -> Result<(), RuntimeError> {
+        let new_env = environment.enclosed();
         Ok(())
     }
 }

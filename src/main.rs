@@ -1,3 +1,5 @@
+use std::{rc::Rc, cell::RefCell};
+
 use expressions::expressions::Expression;
 
 mod tokens;
@@ -10,9 +12,9 @@ mod statement;
 mod environment;
 
 fn interpret(statements: Vec<Box<dyn statement::Statement>>) {
-    let mut env = environment::Environment::new();
+    let env = &mut environment::Environment::new();
     for statement in statements {
-        if let Err(e) = statement.execute(&mut env) {
+        if let Err(e) = statement.execute(env) {
             println!("RuntimeError: {}", e.message);
         }
     }
