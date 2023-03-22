@@ -1,5 +1,5 @@
 
-use crate::{expressions::expressions::Expression, interpreter::RuntimeError, environment::{Environment, self}};
+use crate::{expressions::expressions::Expression, interpreter::RuntimeError, environment::{Environment, self}, parser::Literal};
 
 
 pub trait Statement: std::fmt::Debug {
@@ -79,7 +79,37 @@ impl BlockStatement {
 
 impl Statement for BlockStatement {
     fn execute(&self, environment: &mut Environment) -> Result<(), RuntimeError> {
-        let new_env = environment.enclosed();
+        let new_env = &mut environment.enclosed();
+        for statement in &self.statements {
+            statement.execute(new_env)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct IfStatement {
+    condition: Box<dyn Expression>,
+    then_branch: Box<dyn Statement>,
+    else_branch: Option<Box<dyn Statement>>,
+}
+
+impl IfStatement {
+    pub fn new(condition: Box<dyn Expression>, then_branch: Box<dyn Statement>, else_branch: Option<Box<dyn Statement>>) -> Self {
+        Self { condition, then_branch, else_branch }
+    }
+}
+
+impl Statement for IfStatement {
+    fn execute(&self, environment: &mut Environment) -> Result<(), RuntimeError> {
+        let condition = self.condition.evaluate(environment)?;
+        if let Literal::Boolean(b) = condition {
+            if b {
+                self.then_branch.execute(environment)?;
+            } else if let Some(else_branch) = &self.else_branch {
+                else_branch.execute(environment)?;
+            }
+        }
         Ok(())
     }
 }

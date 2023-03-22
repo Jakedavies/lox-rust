@@ -5,9 +5,9 @@ use crate::{
         assignment_expression::AssignmentExpression, binary_expression::BinaryExpression,
         expressions::Expression, grouping_expression::GroupingExpression,
         literal_expression::LiteralExpression, unary_expression::UnaryExpression,
-        var_expression::VarExpression,
+        var_expression::VarExpression, logical_expression::{LogicalExpression, LogicalExpressionOperator},
     },
-    statement::{ExpressionStatement, PrintStatement, Statement, VarStatement, BlockStatement},
+    statement::{ExpressionStatement, PrintStatement, Statement, VarStatement, BlockStatement, IfStatement},
     tokens::{Token, TokenType},
 };
 
@@ -102,6 +102,9 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Result<dyn Statement> {
+        if self.match_tokens(vec![TokenType::If]) {
+            return self.if_statement();
+        }
         if self.match_tokens(vec![TokenType::Print]) {
             return self.print_statement();
         }
@@ -110,6 +113,21 @@ impl Parser {
         }
 
         return self.expression_statement();
+    }
+
+    fn if_statement(&mut self) -> Result<dyn Statement> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'if'.");
+        let condition = self.expression()?;
+        self.consume(TokenType::RightParen, "Expect ')' after if condition.");
+
+        let then_branch = self.statement()?;
+        let else_branch = if self.match_tokens(vec![TokenType::Else]) {
+            Some(self.statement()?)
+        } else {
+            None
+        };
+
+        return Ok(Box::new(IfStatement::new(condition, then_branch, else_branch)));
     }
 
     fn print_statement(&mut self) -> Result<dyn Statement> {
@@ -144,7 +162,7 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Result<dyn Expression> {
-        let expr = self.equality()?;
+        let expr = self.or()?;
 
         if self.match_tokens(vec![TokenType::Equal]) {
             let equals = self.previous().clone();
@@ -163,6 +181,30 @@ impl Parser {
         }
 
         return Ok(expr);
+    }
+
+    fn or(&mut self) -> Result<dyn Expression> {
+        let mut expr = self.and();
+
+        while self.match_tokens(vec![TokenType::Or]) {
+            let op = self.previous().clone();
+            let right = self.and();
+            expr = Ok(Box::new(LogicalExpression::new(expr?, right?, LogicalExpressionOperator::Or)));
+        }
+
+        return expr;
+    }
+
+    fn and(&mut self) -> Result<dyn Expression> {
+        let mut expr = self.equality();
+
+        while self.match_tokens(vec![TokenType::And]) {
+            let op = self.previous().clone();
+            let right = self.equality();
+            expr = Ok(Box::new(LogicalExpression::new(expr?, right?, LogicalExpressionOperator::And)));
+        }
+
+        return expr;
     }
 
     fn equality(&mut self) -> Result<dyn Expression> {

@@ -3,5 +3,23 @@ var test = "hi the variable has a value";
 print test;
 
 test = "variable has a new value";
+{
+    var test = "inner scoped";
+    print test;
+}
 
 print test;
+
+if(true == true) {
+    print "true";
+}
+
+if (false == true) {
+    print "true 2";
+} else {
+    print "false";
+}
+
+print 1 or 2;
+print 1 == 1;
+print 1 and 2;
