@@ -45,6 +45,7 @@ pub enum TokenType {
     True,
     Var,
     While,
+    Break,
     EOF,
 }
 

@@ -1,6 +1,6 @@
 use std::{rc::{self, Rc}, cell::RefCell};
 
-use crate::{environment::Environment, parser::Literal, interpreter::RuntimeError};
+use crate::{environment::Environment, parser::Literal, interpreter::EvaluationError};
 
 use super::expressions::Expression;
 
@@ -17,7 +17,7 @@ impl VarExpression {
 }
 
 impl Expression for VarExpression {
-    fn evaluate(&self, environment: &mut Environment) -> Result<Literal, RuntimeError> {
+    fn evaluate(&self, environment: &mut Environment) -> Result<Literal, EvaluationError> {
         environment.get(&self.name)
     }
     fn children(&self) -> Vec<&Box<dyn Expression>> {

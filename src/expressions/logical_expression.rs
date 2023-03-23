@@ -1,4 +1,4 @@
-use crate::{tokens::TokenType, environment::Environment, parser::Literal, interpreter::RuntimeError};
+use crate::{tokens::TokenType, environment::Environment, parser::Literal, interpreter::EvaluationError};
 
 use super::expressions::Expression;
 
@@ -22,7 +22,7 @@ impl LogicalExpression {
 }
 
 impl Expression for LogicalExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<Literal, RuntimeError> {
+    fn evaluate(&self, env: &mut Environment) -> Result<Literal, EvaluationError> {
         let left = self.left.evaluate(env)?;
         match self.operator {
             LogicalExpressionOperator::And => {

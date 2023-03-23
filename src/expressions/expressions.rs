@@ -1,10 +1,10 @@
 use std::{any::Any, cell::RefCell, rc::Rc};
 
-use crate::{parser::Literal, interpreter::RuntimeError, environment::{self, Environment}};
+use crate::{parser::Literal, interpreter::EvaluationError, environment::{self, Environment}};
 
 
 pub trait Expression: std::fmt::Debug + Any{
-    fn evaluate(&self, env: &mut Environment) -> Result<Literal, RuntimeError>;
+    fn evaluate(&self, env: &mut Environment) -> Result<Literal, EvaluationError>;
     fn children(&self) -> Vec<&Box<dyn Expression>>;
     fn as_any(&self) -> &dyn Any;
 }

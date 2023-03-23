@@ -7,7 +7,7 @@ use crate::{
         literal_expression::LiteralExpression, unary_expression::UnaryExpression,
         var_expression::VarExpression, logical_expression::{LogicalExpression, LogicalExpressionOperator},
     },
-    statement::{ExpressionStatement, PrintStatement, Statement, VarStatement, BlockStatement, IfStatement},
+    statement::{ExpressionStatement, PrintStatement, Statement, VarStatement, BlockStatement, IfStatement, WhileStatement, BreakStatement},
     tokens::{Token, TokenType},
 };
 
@@ -16,6 +16,16 @@ pub enum Literal {
     Number(f64),
     String(String),
     Boolean(bool),
+}
+
+impl Literal {
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            Literal::Boolean(b) => *b,
+            Literal::Number(n) => *n != 0.0,
+            Literal::String(s) => !s.is_empty(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -102,12 +112,23 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Result<dyn Statement> {
+        if self.match_tokens(vec![TokenType::For]) {
+            return self.for_statement();
+        }
         if self.match_tokens(vec![TokenType::If]) {
             return self.if_statement();
         }
         if self.match_tokens(vec![TokenType::Print]) {
             return self.print_statement();
         }
+        if self.match_tokens(vec![TokenType::While]) {
+            return self.while_statement();
+        }
+
+        if self.match_tokens(vec![TokenType::Break]) {
+            return self.break_statement();
+        }
+
         if self.match_tokens(vec![TokenType::LeftBrace]) {
             return self.block_statement();
         }
@@ -130,6 +151,11 @@ impl Parser {
         return Ok(Box::new(IfStatement::new(condition, then_branch, else_branch)));
     }
 
+    fn break_statement(&mut self) -> Result<dyn Statement> {
+        self.consume(TokenType::Semicolon, "Expect ';' after break.");
+        return Ok(Box::new(BreakStatement::new()));
+    }
+
     fn print_statement(&mut self) -> Result<dyn Statement> {
         let value = self.expression()?;
         self.consume(TokenType::Semicolon, "Expect ';' after value.");
@@ -150,6 +176,67 @@ impl Parser {
         self.consume(TokenType::RightBrace, "Expect '}' after block.");
         return Ok(Box::new(BlockStatement::new(statements)));
     }
+
+    fn while_statement(&mut self) -> Result<dyn Statement> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'while'.");
+        let condition = self.expression()?;
+        self.consume(TokenType::RightParen, "Expect ')' after condition.");
+        let body = self.statement()?;
+        return Ok(Box::new(WhileStatement::new(condition, body)));
+    }
+
+    fn for_statement(&mut self) -> Result<dyn Statement> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'for'.");
+        let initializer = if self.match_tokens(vec![TokenType::Semicolon]) {
+            None
+        } else if self.match_tokens(vec![TokenType::Var]) {
+            Some(self.var_declaration()?)
+        } else {
+            Some(self.expression_statement()?)
+        };
+
+        let condition = if !self.check(TokenType::Semicolon) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+        self.consume(TokenType::Semicolon, "Expect ';' after loop condition.");
+
+        let increment = if !self.check(TokenType::RightParen) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+        self.consume(TokenType::RightParen, "Expect ')' after for clauses.");
+
+        let mut body = self.statement()?;
+
+        // if there is a increment, do it after the main body
+        if let Some(increment) = increment {
+            body = Box::new(BlockStatement::new(vec![
+                body,
+                Box::new(ExpressionStatement::new(increment)),
+            ]));
+        };
+
+        // if there is a condition, we wrap the statement in a loop
+        if let Some(condition) = condition {
+            body = Box::new(WhileStatement::new(condition, body));
+        } else {
+            body = Box::new(WhileStatement::new(
+                Box::new(LiteralExpression::new(Literal::Boolean(true))),
+                body,
+            ));
+        };
+
+        // if there is an initializer, we wrap the statement in a block
+        if let Some(initializer) = initializer {
+            body = Box::new(BlockStatement::new(vec![initializer, body]));
+        };
+
+        return Ok(body);
+    }
+
 
     fn expression_statement(&mut self) -> Result<dyn Statement> {
         let expr = self.expression()?;
@@ -230,7 +317,7 @@ impl Parser {
         ]) {
             let op = self.previous().clone();
             let right = self.term();
-            expr = Ok(Box::new(BinaryExpression::new(op, right?, expr?)));
+            expr = Ok(Box::new(BinaryExpression::new(op, expr?, right?)));
         }
 
         return expr;
@@ -242,7 +329,7 @@ impl Parser {
         while self.match_tokens(vec![TokenType::Minus, TokenType::Plus]) {
             let op = self.previous().clone();
             let right = self.factor();
-            expr = Ok(Box::new(BinaryExpression::new(op, right?, expr?)));
+            expr = Ok(Box::new(BinaryExpression::new(op, expr?, right?)));
         }
 
         return expr;
@@ -254,7 +341,7 @@ impl Parser {
         while self.match_tokens(vec![TokenType::Slash, TokenType::Star]) {
             let op = self.previous().clone();
             let right = self.unary();
-            expr = Ok(Box::new(BinaryExpression::new(op, right?, expr?)));
+            expr = Ok(Box::new(BinaryExpression::new(op, expr?, right?)));
         }
 
         return expr;

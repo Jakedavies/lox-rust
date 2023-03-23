@@ -191,6 +191,7 @@ impl Scanner {
             "or" => TokenType::Or,
             "print" => TokenType::Print,
             "return" => TokenType::Return,
+            "break" => TokenType::Break,
             "super" => TokenType::Super,
             "this" => TokenType::This,
             "true" => TokenType::True,

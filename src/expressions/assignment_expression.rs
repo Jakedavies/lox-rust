@@ -1,6 +1,6 @@
 use std::{rc::Rc, cell::RefCell};
 
-use crate::{environment::Environment, parser::Literal, interpreter::RuntimeError};
+use crate::{environment::Environment, parser::Literal, interpreter::EvaluationError};
 
 use super::expressions::Expression;
 
@@ -18,7 +18,7 @@ impl AssignmentExpression {
 }
 
 impl Expression for AssignmentExpression {
-    fn evaluate(&self, environment: &mut Environment) -> Result<Literal, RuntimeError> {
+    fn evaluate(&self, environment: &mut Environment) -> Result<Literal, EvaluationError> {
         let v = self.child.evaluate(environment)?;
         environment.set(&self.name, v.clone())?;
         Ok(v.clone())

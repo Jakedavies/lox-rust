@@ -1,9 +1,8 @@
 
-use crate::{expressions::expressions::Expression, interpreter::RuntimeError, environment::{Environment, self}, parser::Literal};
-
+use crate::{expressions::expressions::Expression, interpreter::{EvaluationError, ErrorType}, environment::{Environment, self}, parser::Literal};
 
 pub trait Statement: std::fmt::Debug {
-    fn execute(&self, context: &mut Environment) -> Result<(), RuntimeError>;
+    fn execute(&self, context: &mut Environment) -> Result<(), EvaluationError>;
 }
 
 #[derive(Debug)]
@@ -18,7 +17,7 @@ impl PrintStatement {
 }
 
 impl Statement for PrintStatement {
-    fn execute(&self, environment: &mut Environment) -> Result<(), RuntimeError> {
+    fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
         let value = self.expression.evaluate(environment)?;
         println!("{}", value);
         Ok(())
@@ -38,7 +37,7 @@ impl ExpressionStatement {
 }
 
 impl Statement for ExpressionStatement {
-    fn execute(&self, environment: &mut Environment) -> Result<(), RuntimeError> {
+    fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
         self.expression.evaluate(environment)?;
         Ok(())
     }
@@ -58,7 +57,7 @@ impl VarStatement {
 }
 
 impl Statement for VarStatement {
-    fn execute(&self, environment: &mut Environment) -> Result<(), RuntimeError> {
+    fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
         let value = self.initializer.evaluate(environment)?;
         // TODO. Assign this value to the global environment.
         environment.define(self.name.clone(), value);
@@ -78,7 +77,7 @@ impl BlockStatement {
 }
 
 impl Statement for BlockStatement {
-    fn execute(&self, environment: &mut Environment) -> Result<(), RuntimeError> {
+    fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
         let new_env = &mut environment.enclosed();
         for statement in &self.statements {
             statement.execute(new_env)?;
@@ -101,7 +100,7 @@ impl IfStatement {
 }
 
 impl Statement for IfStatement {
-    fn execute(&self, environment: &mut Environment) -> Result<(), RuntimeError> {
+    fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
         let condition = self.condition.evaluate(environment)?;
         if let Literal::Boolean(b) = condition {
             if b {
@@ -113,3 +112,49 @@ impl Statement for IfStatement {
         Ok(())
     }
 }
+
+
+#[derive(Debug)]
+pub struct WhileStatement {
+    condition: Box<dyn Expression>,
+    body: Box<dyn Statement>,
+}
+
+impl WhileStatement {
+    pub fn new(condition: Box<dyn Expression>, body: Box<dyn Statement>) -> Self {
+        Self { condition, body }
+    }
+}
+
+impl Statement for WhileStatement {
+    fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
+        while self.condition.evaluate(environment)?.is_truthy() {
+            let r = self.body.execute(environment);
+            if let Err(e) = r {
+                if e.kind == ErrorType::BreakError {
+                    break;
+                } else {
+                    return Err(e);
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+pub struct BreakStatement {}
+
+impl BreakStatement {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Statement for BreakStatement {
+    fn execute(&self, _environment: &mut Environment) -> Result<(), EvaluationError> {
+        return Err(EvaluationError::break_error());
+    }
+}
+
+

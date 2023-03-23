@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{interpreter::RuntimeError, parser::Literal};
+use crate::{interpreter::EvaluationError, parser::Literal};
 
 pub struct EnvironmentNode {
     pub values: HashMap<String, Literal>,
@@ -13,9 +13,9 @@ impl EnvironmentNode {
         self.values.insert(name, value);
     }
 
-    pub fn set(&mut self, name: &String, value: Literal) -> Result<(), RuntimeError> {
+    pub fn set(&mut self, name: &String, value: Literal) -> Result<(), EvaluationError> {
         match (self.values.get_mut(name), self.parent.clone()) {
-            (None, None) => Err(RuntimeError::new(format!("Undefined variable '{}'", name))),
+            (None, None) => Err(EvaluationError::runtime_error(format!("Undefined variable '{}'", name))),
             (None, Some(parent)) => parent.borrow_mut().set(name, value),
             (Some(val), _) => {
                 *val = value;
@@ -24,9 +24,9 @@ impl EnvironmentNode {
         }
     }
 
-    pub fn get(&self, name: &String) -> Result<Literal, RuntimeError> {
+    pub fn get(&self, name: &String) -> Result<Literal, EvaluationError> {
         match (self.values.get(name), self.parent.clone()) {
-            (None, None) => Err(RuntimeError::new(format!("Undefined variable '{}'", name))),
+            (None, None) => Err(EvaluationError::runtime_error(format!("Undefined variable '{}'", name))),
             (Some(value), _) => Ok((*value).clone()),
             (_, Some(parent)) => {
                 let p = parent.borrow();
@@ -63,11 +63,11 @@ impl Environment {
         self.e.borrow_mut().define(name, value);
     }
 
-    pub fn set(&mut self, name: &String, value: Literal) -> Result<(), RuntimeError> {
+    pub fn set(&mut self, name: &String, value: Literal) -> Result<(), EvaluationError> {
         self.e.borrow_mut().set(name, value)
     }
 
-    pub fn get(&self, name: &String) -> Result<Literal, RuntimeError> {
+    pub fn get(&self, name: &String) -> Result<Literal, EvaluationError> {
         self.e.borrow().get(name)
     }
 

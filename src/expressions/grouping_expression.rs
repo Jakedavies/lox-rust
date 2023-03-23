@@ -1,4 +1,4 @@
-use crate::{parser::Literal, interpreter::RuntimeError, environment::Environment};
+use crate::{parser::Literal, interpreter::EvaluationError, environment::Environment};
 use super::expressions::Expression;
 
 use std::{rc::Rc, cell::RefCell};
@@ -16,7 +16,7 @@ impl GroupingExpression {
 }
 
 impl Expression for GroupingExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<Literal, RuntimeError> {
+    fn evaluate(&self, env: &mut Environment) -> Result<Literal, EvaluationError> {
         self.child.evaluate(env)
     }
 

@@ -1,4 +1,4 @@
-use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::RuntimeError, environment::Environment};
+use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::EvaluationError, environment::Environment};
 use super::expressions::Expression;
 
 
@@ -14,7 +14,7 @@ impl LiteralExpression {
 }
 
 impl Expression for LiteralExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<Literal, RuntimeError> {
+    fn evaluate(&self, env: &mut Environment) -> Result<Literal, EvaluationError> {
         Ok(self.value.clone())
     }
 
