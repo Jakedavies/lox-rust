@@ -5,7 +5,7 @@ use crate::{
         assignment_expression::AssignmentExpression, binary_expression::BinaryExpression,
         expressions::Expression, grouping_expression::GroupingExpression,
         literal_expression::LiteralExpression, unary_expression::UnaryExpression,
-        var_expression::VarExpression, logical_expression::{LogicalExpression, LogicalExpressionOperator},
+        var_expression::VarExpression, logical_expression::{LogicalExpression, LogicalExpressionOperator}, call_expression::CallExpression,
     },
     statement::{ExpressionStatement, PrintStatement, Statement, VarStatement, BlockStatement, IfStatement, WhileStatement, BreakStatement},
     tokens::{Token, TokenType},
@@ -354,8 +354,49 @@ impl Parser {
             return Ok(Box::new(UnaryExpression::new(op, right?)));
         }
 
-        return self.primary();
+        return self.call();
     }
+
+    fn call(&mut self) -> Result<dyn Expression> {
+        let mut expr = self.primary()?;
+
+        loop {
+            if self.match_tokens(vec![TokenType::LeftParen]) {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+
+        return Ok(expr);
+    }
+
+    fn finish_call(&mut self, callee: Box<dyn Expression>) -> Result<dyn Expression> {
+         let mut arguments = Vec::new();
+
+        if !self.check(TokenType::RightParen) {
+            loop {
+                if arguments.len() >= 255 {
+                    return Err(Box::new(ParseError::new(
+                        self.peek().clone(),
+                        "Can't have more than 255 arguments.",
+                    )));
+                }
+
+                arguments.push(self.expression()?);
+
+                if !self.match_tokens(vec![TokenType::Comma]) {
+                    break;
+                }
+            }
+        };
+
+        let paren = self.consume(TokenType::RightParen, "Expect ) after arguments.");
+
+        let c = CallExpression::new(callee, (*paren).clone(), arguments);
+        return Ok(Box::new(c));
+    }
+
 
     fn primary(&mut self) -> Result<dyn Expression> {
         let token_type = self.tokens[self.pos].token_type.clone();
