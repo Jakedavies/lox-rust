@@ -1,5 +1,9 @@
-
-use crate::{expressions::expressions::Expression, interpreter::{EvaluationError, ErrorType}, environment::{Environment, self}, parser::Literal};
+use crate::{
+    environment::{self, Environment},
+    expressions::expressions::{Expression, ExpressionResult},
+    interpreter::{ErrorType, EvaluationError},
+    parser::Literal,
+};
 
 pub trait Statement: std::fmt::Debug {
     fn execute(&self, context: &mut Environment) -> Result<(), EvaluationError>;
@@ -19,11 +23,9 @@ impl PrintStatement {
 impl Statement for PrintStatement {
     fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
         let value = self.expression.evaluate(environment)?;
-        println!("{}", value);
         Ok(())
     }
 }
-
 
 #[derive(Debug)]
 pub struct ExpressionStatement {
@@ -43,7 +45,6 @@ impl Statement for ExpressionStatement {
     }
 }
 
-
 #[derive(Debug)]
 pub struct VarStatement {
     name: String,
@@ -60,7 +61,7 @@ impl Statement for VarStatement {
     fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
         let value = self.initializer.evaluate(environment)?;
         // TODO. Assign this value to the global environment.
-        environment.define(self.name.clone(), value);
+        environment.define(self.name.clone(), (*value).clone());
         Ok(())
     }
 }
@@ -94,25 +95,31 @@ pub struct IfStatement {
 }
 
 impl IfStatement {
-    pub fn new(condition: Box<dyn Expression>, then_branch: Box<dyn Statement>, else_branch: Option<Box<dyn Statement>>) -> Self {
-        Self { condition, then_branch, else_branch }
+    pub fn new(
+        condition: Box<dyn Expression>,
+        then_branch: Box<dyn Statement>,
+        else_branch: Option<Box<dyn Statement>>,
+    ) -> Self {
+        Self {
+            condition,
+            then_branch,
+            else_branch,
+        }
     }
 }
 
 impl Statement for IfStatement {
     fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
         let condition = self.condition.evaluate(environment)?;
-        if let Literal::Boolean(b) = condition {
-            if b {
-                self.then_branch.execute(environment)?;
-            } else if let Some(else_branch) = &self.else_branch {
-                else_branch.execute(environment)?;
-            }
+        if condition.is_truthy() {
+            self.then_branch.execute(environment)?;
+        } else if let Some(else_branch) = &self.else_branch {
+            else_branch.execute(environment)?;
         }
+
         Ok(())
     }
 }
-
 
 #[derive(Debug)]
 pub struct WhileStatement {
@@ -157,4 +164,53 @@ impl Statement for BreakStatement {
     }
 }
 
+#[derive(Debug)]
+pub enum Callable {
+    Clock,
+    UserDefined(Box<dyn Statement>, usize),
+}
 
+impl Callable {
+    fn arity(&self) -> &usize {
+        match self {
+            Callable::Clock => &0,
+            Callable::UserDefined(stmt, arity) => arity,
+        }
+    }
+
+    fn call(
+        &self,
+        env: &mut Environment,
+        args: Vec<ExpressionResult>,
+    ) -> Result<(), EvaluationError> {
+        match self {
+            Callable::Clock => {
+                let now = std::time::SystemTime::now();
+                let since_the_epoch = now
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .expect("Time went backwards");
+                let in_ms = since_the_epoch.as_millis();
+                let value = Literal::Number(in_ms as f64);
+                print!("{}", value);
+                Ok(())
+            }
+            Callable::UserDefined(stmt, _) => stmt.execute(env),
+        }
+    }
+
+    fn partial_eq(&self, other: &Callable) -> bool {
+        match self {
+            Callable::Clock => match other {
+                Callable::Clock => true,
+                _ => false,
+            },
+            Callable::UserDefined(stmt, arity) => false,
+        }
+    }
+}
+
+impl PartialEq for Callable {
+    fn eq(&self, other: &Self) -> bool {
+        self.partial_eq(other)
+    }
+}

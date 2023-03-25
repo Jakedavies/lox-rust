@@ -1,4 +1,4 @@
-use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::EvaluationError, environment::Environment};
+use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::EvaluationError, environment::Environment, expressions::expressions::ExpressionResult};
 use super::expressions::Expression;
 
 
@@ -15,21 +15,22 @@ impl UnaryExpression {
 }
 
 impl Expression for UnaryExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<Literal, EvaluationError> {
+    fn evaluate(&self, env: &mut Environment) -> Result<&ExpressionResult, EvaluationError> {
         let child = self.child.evaluate(env)?;
         match &self.op.token_type {
             TokenType::Minus => {
-                if let Literal::Number(n) = child {
-                    return Ok(Literal::Number(-n));
+                if let ExpressionResult::Literal(Literal::Number(n)) = child {
+                    return Ok(&ExpressionResult::Literal(Literal::Number(-n)));
                 }
 
                 panic!("Expected number, got: {:?}", child);
             }
             TokenType::Bang => {
                 return match child {
-                    Literal::Boolean(b) => Ok(Literal::Boolean(!b)),
-                    Literal::Number(n) => Ok(Literal::Boolean(n == 0.0)),
-                    Literal::String(s) => Ok(Literal::Boolean(s.len() == 0)),
+                    ExpressionResult::Literal(Literal::Boolean(b)) => Ok(&ExpressionResult::Literal(Literal::Boolean(!b))),
+                    ExpressionResult::Literal(Literal::Number(n)) => Ok(&ExpressionResult::Literal(Literal::Boolean(*n == 0.0))),
+                    ExpressionResult::Literal(Literal::String(s)) => Ok(&ExpressionResult::Literal(Literal::Boolean(s.len() == 0))),
+                    _ => Err(EvaluationError::runtime_error("Expected boolean, number or string".to_string()))
                 };
             }
             _ => {

@@ -2,7 +2,7 @@ use std::{rc::Rc, cell::RefCell};
 
 use crate::{environment::Environment, parser::Literal, interpreter::EvaluationError};
 
-use super::expressions::Expression;
+use super::expressions::{Expression, ExpressionResult};
 
 
 #[derive(Debug)]
@@ -18,10 +18,10 @@ impl AssignmentExpression {
 }
 
 impl Expression for AssignmentExpression {
-    fn evaluate(&self, environment: &mut Environment) -> Result<Literal, EvaluationError> {
+    fn evaluate(&self, environment: &mut Environment) -> Result<&ExpressionResult, EvaluationError> {
         let v = self.child.evaluate(environment)?;
         environment.set(&self.name, v.clone())?;
-        Ok(v.clone())
+        Ok(v)
     }
 
     fn children(&self) -> Vec<&Box<dyn Expression>> {

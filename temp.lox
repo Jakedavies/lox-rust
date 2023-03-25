@@ -38,3 +38,5 @@ for(var a = 0; a <= 100; a = a + 10) {
     }
     print "A is " + a;
 }
+
+print clock();

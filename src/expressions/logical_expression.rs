@@ -1,6 +1,6 @@
 use crate::{tokens::TokenType, environment::Environment, parser::Literal, interpreter::EvaluationError};
 
-use super::expressions::Expression;
+use super::expressions::{Expression, ExpressionResult};
 
 #[derive(Debug)]
 pub enum LogicalExpressionOperator {
@@ -22,22 +22,22 @@ impl LogicalExpression {
 }
 
 impl Expression for LogicalExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<Literal, EvaluationError> {
+    fn evaluate(&self, env: &mut Environment) -> Result<&ExpressionResult, EvaluationError> {
         let left = self.left.evaluate(env)?;
         match self.operator {
             LogicalExpressionOperator::And => {
-                if left == Literal::Boolean(false){
-                    return Ok(Literal::Boolean(false));
+                if !left.is_truthy() {
+                    return Ok(&ExpressionResult::Literal(Literal::Boolean(false)));
                 }
             }
             LogicalExpressionOperator::Or => {
-                if left == Literal::Boolean(true) {
-                    return Ok(Literal::Boolean(true));
+                if left.is_truthy(){
+                    return Ok(&ExpressionResult::Literal(Literal::Boolean(true)));
                 }
             }
         }
         let right = self.right.evaluate(env)?;
-        Ok(Literal::Boolean(right == Literal::Boolean(true)))
+        Ok(&ExpressionResult::Literal(Literal::Boolean(right.is_truthy())))
     }
 
     fn children(&self) -> Vec<&Box<dyn Expression>> {

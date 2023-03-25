@@ -1,5 +1,5 @@
 use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::EvaluationError, environment::Environment};
-use super::expressions::Expression;
+use super::expressions::{Expression, ExpressionResult};
 
 
 #[derive(Debug)]
@@ -14,8 +14,8 @@ impl LiteralExpression {
 }
 
 impl Expression for LiteralExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<Literal, EvaluationError> {
-        Ok(self.value.clone())
+    fn evaluate(&self, env: &mut Environment) -> Result<&ExpressionResult, EvaluationError> {
+        Ok(&ExpressionResult::Literal(self.value))
     }
 
     fn children(&self) -> Vec<&Box<dyn Expression>> {

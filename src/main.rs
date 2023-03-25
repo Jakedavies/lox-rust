@@ -1,6 +1,6 @@
 use std::{rc::Rc, cell::RefCell};
 
-use expressions::expressions::Expression;
+use expressions::expressions::{Expression, ExpressionResult, Callable};
 
 mod tokens;
 mod scanner;
@@ -13,6 +13,10 @@ mod environment;
 
 fn interpret(statements: Vec<Box<dyn statement::Statement>>) {
     let env = &mut environment::Environment::new();
+
+    // Define built-in functions
+    env.define("clock".to_string(), ExpressionResult::Callable(Callable::Clock));
+
     for statement in statements {
         if let Err(e) = statement.execute(env) {
             println!("RuntimeError: {}", e.message);

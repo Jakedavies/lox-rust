@@ -1,10 +1,104 @@
 use std::{any::Any, cell::RefCell, rc::Rc};
 
-use crate::{parser::Literal, interpreter::EvaluationError, environment::{self, Environment}};
+use crate::{parser::Literal, interpreter::EvaluationError, environment::{self, Environment}, statement::Statement};
+
+
+/**
+pub trait Callable: std::fmt::Debug + Any {
+    fn arity(&self) -> usize;
+    fn call(&self, env: &mut Environment, args: Vec<ExpressionResult>) -> Result<ExpressionResult, EvaluationError>;
+}
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Clock;
+
+impl Callable for Clock {
+    fn arity(&self) -> usize {
+        0
+    }
+
+    fn call(&self, env: &mut Environment, args: Vec<ExpressionResult>) -> Result<ExpressionResult, EvaluationError> {
+        Ok(ExpressionResult::Literal(Literal::Number(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as f64)))
+    }
+}
+*/
+
+#[derive(Debug)]
+pub enum Callable {
+    Clock,
+    UserDefined(Box<dyn Statement>, usize),
+}
+
+impl Clone for Callable {
+    fn clone(&self) -> Self {
+        match self {
+            Callable::Clock => Callable::Clock,
+            Callable::UserDefined(stmt, arity) => {
+                Callable::UserDefined(*stmt.clone(), *arity)
+            },
+        }
+    }
+}
+
+
+impl Callable {
+    pub fn arity(&self) -> &usize {
+        match self {
+            Callable::Clock => &0,
+            Callable::UserDefined(stmt, arity) => arity,
+        }
+    }
+
+    pub fn call(&self, env: &mut Environment, args: Vec<&ExpressionResult>) -> Result<&ExpressionResult, EvaluationError> {
+        match self {
+            Callable::Clock => Ok(&ExpressionResult::Literal(Literal::Number(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as f64))),
+            Callable::UserDefined(stmt, _) => { 
+                stmt.execute(env);
+                Ok(&ExpressionResult::None)
+            },
+        }
+    }
+
+    fn partial_eq(&self, other: &Callable) -> bool {
+        match self {
+            Callable::Clock => match other {
+                Callable::Clock => true,
+                _ => false,
+            },
+            Callable::UserDefined(stmt, arity) => false
+        }
+    }
+}
+
+impl PartialEq for Callable {
+    fn eq(&self, other: &Self) -> bool {
+        self.partial_eq(other)
+    }
+}
+
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum ExpressionResult {
+    None,
+    Literal(Literal),
+    Callable(Callable),
+}
+
+impl ExpressionResult {
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            ExpressionResult::None => false,
+            ExpressionResult::Literal(literal) => literal.is_truthy(),
+            ExpressionResult::Callable(callable) => true,
+        }
+    }
+}
+
 
 
 pub trait Expression: std::fmt::Debug + Any{
-    fn evaluate(&self, env: &mut Environment) -> Result<Literal, EvaluationError>;
+    fn evaluate(&self, env: &mut Environment) -> Result<&ExpressionResult, EvaluationError>;
     fn children(&self) -> Vec<&Box<dyn Expression>>;
     fn as_any(&self) -> &dyn Any;
 }
