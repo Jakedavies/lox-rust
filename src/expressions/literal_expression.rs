@@ -14,8 +14,8 @@ impl LiteralExpression {
 }
 
 impl Expression for LiteralExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<&ExpressionResult, EvaluationError> {
-        Ok(&ExpressionResult::Literal(self.value))
+    fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
+        Ok(ExpressionResult::Literal(self.value.clone()))
     }
 
     fn children(&self) -> Vec<&Box<dyn Expression>> {

@@ -23,6 +23,7 @@ impl PrintStatement {
 impl Statement for PrintStatement {
     fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
         let value = self.expression.evaluate(environment)?;
+        println!("{}", value);
         Ok(())
     }
 }
@@ -61,7 +62,7 @@ impl Statement for VarStatement {
     fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
         let value = self.initializer.evaluate(environment)?;
         // TODO. Assign this value to the global environment.
-        environment.define(self.name.clone(), (*value).clone());
+        environment.define(self.name.clone(), (value).clone());
         Ok(())
     }
 }

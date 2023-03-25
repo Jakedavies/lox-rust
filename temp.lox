@@ -1,4 +1,6 @@
 // test
+
+var l = clock();
 var test = "hi the variable has a value";
 print test;
 
@@ -31,6 +33,7 @@ while(i < 5) {
     print "Iteration " + i;
 }
 
+
 // loop to 100 by 10s
 for(var a = 0; a <= 100; a = a + 10) {
     if(a > 50) {
@@ -39,4 +42,6 @@ for(var a = 0; a <= 100; a = a + 10) {
     print "A is " + a;
 }
 
-print clock();
+print "Program exection took " + (clock() - l) + " seconds";
+
+

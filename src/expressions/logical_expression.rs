@@ -22,22 +22,22 @@ impl LogicalExpression {
 }
 
 impl Expression for LogicalExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<&ExpressionResult, EvaluationError> {
+    fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
         let left = self.left.evaluate(env)?;
         match self.operator {
             LogicalExpressionOperator::And => {
                 if !left.is_truthy() {
-                    return Ok(&ExpressionResult::Literal(Literal::Boolean(false)));
+                    return Ok(ExpressionResult::Literal(Literal::Boolean(false)));
                 }
             }
             LogicalExpressionOperator::Or => {
                 if left.is_truthy(){
-                    return Ok(&ExpressionResult::Literal(Literal::Boolean(true)));
+                    return Ok(ExpressionResult::Literal(Literal::Boolean(true)));
                 }
             }
         }
         let right = self.right.evaluate(env)?;
-        Ok(&ExpressionResult::Literal(Literal::Boolean(right.is_truthy())))
+        Ok(ExpressionResult::Literal(Literal::Boolean(right.is_truthy())))
     }
 
     fn children(&self) -> Vec<&Box<dyn Expression>> {

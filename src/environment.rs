@@ -24,14 +24,14 @@ impl EnvironmentNode {
         }
     }
 
-    pub fn get(&self, name: &String) -> Result<&ExpressionResult, EvaluationError> {
+    pub fn get(&self, name: &String) -> Result<ExpressionResult, EvaluationError> {
         match (self.values.get(name), self.parent.clone()) {
             (None, None) => Err(EvaluationError::runtime_error(format!("Undefined variable '{}'", name))),
-            (Some(value), _) => Ok(value),
+            (Some(value), _) => Ok(value.clone()),
             (_, Some(parent)) => {
                 let p = parent.borrow();
                 let v = p.get(name)?;
-                return Ok(&v.to_owned());
+                return Ok(v.to_owned());
             }
         }
     }
@@ -67,7 +67,7 @@ impl Environment {
         self.e.borrow_mut().set(name, value)
     }
 
-    pub fn get(&self, name: &String) -> Result<&ExpressionResult, EvaluationError> {
+    pub fn get(&self, name: &String) -> Result<ExpressionResult, EvaluationError> {
         self.e.borrow().get(name)
     }
 

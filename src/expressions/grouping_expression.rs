@@ -16,7 +16,7 @@ impl GroupingExpression {
 }
 
 impl Expression for GroupingExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<&ExpressionResult, EvaluationError> {
+    fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
         self.child.evaluate(env)
     }
 

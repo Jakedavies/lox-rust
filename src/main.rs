@@ -34,6 +34,8 @@ fn run(source: String) {
     let mut parser = parser::Parser::new(tokens);
     let tree = parser.parse();
 
+    println!("{:?}", tree);
+
     // print the result
     interpret(tree)
 }

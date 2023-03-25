@@ -1,4 +1,4 @@
-use std::{any::Any, cell::RefCell, rc::Rc};
+use std::{any::Any, cell::RefCell, rc::Rc, fmt::{Formatter, Display}};
 
 use crate::{parser::Literal, interpreter::EvaluationError, environment::{self, Environment}, statement::Statement};
 
@@ -25,24 +25,24 @@ impl Callable for Clock {
 */
 
 #[derive(Debug)]
-pub enum Callable {
+pub enum Callable<'a> {
     Clock,
-    UserDefined(Box<dyn Statement>, usize),
+    UserDefined(&'a Box<dyn Statement>, usize),
 }
 
-impl Clone for Callable {
+impl<'a> Clone for Callable<'a> {
     fn clone(&self) -> Self {
         match self {
             Callable::Clock => Callable::Clock,
             Callable::UserDefined(stmt, arity) => {
-                Callable::UserDefined(*stmt.clone(), *arity)
+                Callable::UserDefined(stmt.clone(), *arity)
             },
         }
     }
 }
 
 
-impl Callable {
+impl<'a> Callable<'a> {
     pub fn arity(&self) -> &usize {
         match self {
             Callable::Clock => &0,
@@ -50,12 +50,12 @@ impl Callable {
         }
     }
 
-    pub fn call(&self, env: &mut Environment, args: Vec<&ExpressionResult>) -> Result<&ExpressionResult, EvaluationError> {
+    pub fn call(&self, env: &mut Environment, args: Vec<ExpressionResult>) -> Result<ExpressionResult, EvaluationError> {
         match self {
-            Callable::Clock => Ok(&ExpressionResult::Literal(Literal::Number(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as f64))),
+            Callable::Clock => Ok(ExpressionResult::Literal(Literal::Number(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as f64))),
             Callable::UserDefined(stmt, _) => { 
                 stmt.execute(env);
-                Ok(&ExpressionResult::None)
+                Ok(ExpressionResult::None)
             },
         }
     }
@@ -71,7 +71,7 @@ impl Callable {
     }
 }
 
-impl PartialEq for Callable {
+impl<'a> PartialEq for Callable<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.partial_eq(other)
     }
@@ -82,7 +82,17 @@ impl PartialEq for Callable {
 pub enum ExpressionResult {
     None,
     Literal(Literal),
-    Callable(Callable),
+    Callable(Callable<'static>),
+}
+
+impl Display for ExpressionResult {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ExpressionResult::None => write!(f, "None"),
+            ExpressionResult::Literal(literal) => write!(f, "{}", literal),
+            ExpressionResult::Callable(callable) => write!(f, "Callable"),
+        }
+    }
 }
 
 impl ExpressionResult {
@@ -98,7 +108,7 @@ impl ExpressionResult {
 
 
 pub trait Expression: std::fmt::Debug + Any{
-    fn evaluate(&self, env: &mut Environment) -> Result<&ExpressionResult, EvaluationError>;
+    fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError>;
     fn children(&self) -> Vec<&Box<dyn Expression>>;
     fn as_any(&self) -> &dyn Any;
 }

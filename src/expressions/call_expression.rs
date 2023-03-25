@@ -17,7 +17,7 @@ impl CallExpression {
 }
 
 impl Expression for CallExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<&ExpressionResult, EvaluationError> {
+    fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
         let callee = self.callee.evaluate(env)?;
         let mut args = Vec::new();
         for arg in &self.arguments {

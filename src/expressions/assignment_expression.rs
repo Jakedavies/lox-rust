@@ -18,7 +18,7 @@ impl AssignmentExpression {
 }
 
 impl Expression for AssignmentExpression {
-    fn evaluate(&self, environment: &mut Environment) -> Result<&ExpressionResult, EvaluationError> {
+    fn evaluate(&self, environment: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
         let v = self.child.evaluate(environment)?;
         environment.set(&self.name, v.clone())?;
         Ok(v)
