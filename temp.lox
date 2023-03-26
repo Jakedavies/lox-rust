@@ -45,3 +45,8 @@ for(var a = 0; a <= 100; a = a + 10) {
 print "Program exection took " + (clock() - l) + " seconds";
 
 
+fun printName(name) {
+  print "Your name is" + name;
+}
+
+printName("jake");

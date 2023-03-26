@@ -1,6 +1,6 @@
 use crate::{
     environment::{self, Environment},
-    expressions::expressions::{Expression, ExpressionResult},
+    expressions::expressions::{Expression, ExpressionResult, Callable},
     interpreter::{ErrorType, EvaluationError},
     parser::Literal,
 };
@@ -151,6 +151,27 @@ impl Statement for WhileStatement {
 }
 
 #[derive(Debug)]
+pub struct FunctionStatement {
+    name: String,
+    params: Vec<String>,
+    body: Box<dyn Statement>,
+}
+
+impl FunctionStatement {
+    pub fn new(name: String, params: Vec<String>, body: Box<dyn Statement>) -> Self {
+        Self { name, params, body }
+    }
+}
+
+impl Statement for FunctionStatement {
+    fn execute(&self, environment: &mut Environment) -> Result<(), EvaluationError> {
+        let function = Callable::UserDefined(&self.body, self.params.len());
+        environment.define(self.name.clone(), ExpressionResult::Callable(function));
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
 pub struct BreakStatement {}
 
 impl BreakStatement {
@@ -162,56 +183,5 @@ impl BreakStatement {
 impl Statement for BreakStatement {
     fn execute(&self, _environment: &mut Environment) -> Result<(), EvaluationError> {
         return Err(EvaluationError::break_error());
-    }
-}
-
-#[derive(Debug)]
-pub enum Callable {
-    Clock,
-    UserDefined(Box<dyn Statement>, usize),
-}
-
-impl Callable {
-    fn arity(&self) -> &usize {
-        match self {
-            Callable::Clock => &0,
-            Callable::UserDefined(stmt, arity) => arity,
-        }
-    }
-
-    fn call(
-        &self,
-        env: &mut Environment,
-        args: Vec<ExpressionResult>,
-    ) -> Result<(), EvaluationError> {
-        match self {
-            Callable::Clock => {
-                let now = std::time::SystemTime::now();
-                let since_the_epoch = now
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .expect("Time went backwards");
-                let in_ms = since_the_epoch.as_millis();
-                let value = Literal::Number(in_ms as f64);
-                print!("{}", value);
-                Ok(())
-            }
-            Callable::UserDefined(stmt, _) => stmt.execute(env),
-        }
-    }
-
-    fn partial_eq(&self, other: &Callable) -> bool {
-        match self {
-            Callable::Clock => match other {
-                Callable::Clock => true,
-                _ => false,
-            },
-            Callable::UserDefined(stmt, arity) => false,
-        }
-    }
-}
-
-impl PartialEq for Callable {
-    fn eq(&self, other: &Self) -> bool {
-        self.partial_eq(other)
     }
 }

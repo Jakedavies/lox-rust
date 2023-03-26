@@ -1,4 +1,4 @@
-use std::{any::Any, cell::RefCell, rc::Rc, fmt::{Formatter, Display}};
+use std::{any::Any, cell::RefCell, rc::Rc, fmt::{Display, Formatter}};
 
 use crate::{parser::Literal, interpreter::EvaluationError, environment::{self, Environment}, statement::Statement};
 
@@ -25,24 +25,24 @@ impl Callable for Clock {
 */
 
 #[derive(Debug)]
-pub enum Callable<'a> {
+pub enum Callable {
     Clock,
-    UserDefined(&'a Box<dyn Statement>, usize),
+    UserDefined(Box<dyn Statement>, usize),
 }
 
-impl<'a> Clone for Callable<'a> {
+impl<'a> Clone for Callable {
     fn clone(&self) -> Self {
         match self {
             Callable::Clock => Callable::Clock,
             Callable::UserDefined(stmt, arity) => {
-                Callable::UserDefined(stmt.clone(), *arity)
+                Callable::UserDefined(*stmt, *arity)
             },
         }
     }
 }
 
 
-impl<'a> Callable<'a> {
+impl Callable {
     pub fn arity(&self) -> &usize {
         match self {
             Callable::Clock => &0,
@@ -71,7 +71,7 @@ impl<'a> Callable<'a> {
     }
 }
 
-impl<'a> PartialEq for Callable<'a> {
+impl<'a> PartialEq for Callable {
     fn eq(&self, other: &Self) -> bool {
         self.partial_eq(other)
     }
@@ -82,7 +82,17 @@ impl<'a> PartialEq for Callable<'a> {
 pub enum ExpressionResult {
     None,
     Literal(Literal),
-    Callable(Callable<'static>),
+    Callable(Callable),
+}
+
+impl<'a> ExpressionResult{
+    pub fn is_truthy(&self) -> bool {
+        match self {
+            ExpressionResult::None => false,
+            ExpressionResult::Literal(literal) => literal.is_truthy(),
+            ExpressionResult::Callable(callable) => true,
+        }
+    }
 }
 
 impl Display for ExpressionResult {
@@ -94,17 +104,6 @@ impl Display for ExpressionResult {
         }
     }
 }
-
-impl ExpressionResult {
-    pub fn is_truthy(&self) -> bool {
-        match self {
-            ExpressionResult::None => false,
-            ExpressionResult::Literal(literal) => literal.is_truthy(),
-            ExpressionResult::Callable(callable) => true,
-        }
-    }
-}
-
 
 
 pub trait Expression: std::fmt::Debug + Any{

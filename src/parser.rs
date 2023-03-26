@@ -7,7 +7,7 @@ use crate::{
         literal_expression::LiteralExpression, unary_expression::UnaryExpression,
         var_expression::VarExpression, logical_expression::{LogicalExpression, LogicalExpressionOperator}, call_expression::CallExpression,
     },
-    statement::{ExpressionStatement, PrintStatement, Statement, VarStatement, BlockStatement, IfStatement, WhileStatement, BreakStatement},
+    statement::{ExpressionStatement, PrintStatement, Statement, VarStatement, BlockStatement, IfStatement, WhileStatement, BreakStatement, FunctionStatement},
     tokens::{Token, TokenType},
 };
 
@@ -91,6 +91,10 @@ impl Parser {
             return self.var_declaration();
         }
 
+        if self.match_tokens(vec![TokenType::Fun]) {
+            return self.fun_declaration();
+        }
+
         return self.statement();
     }
 
@@ -109,6 +113,34 @@ impl Parser {
             "Expect ';' after variable declaration.",
         );
         return Ok(Box::new(VarStatement::new(identifier_lexeme, initializer)));
+    }
+
+    fn fun_declaration(&mut self) -> Result<dyn Statement> {
+        let identifier = self.consume(
+            TokenType::Idenfitier("".to_string()),
+            "Expect function name.",
+        );
+        let identifier_lexeme = identifier.lexeme.clone();
+        self.consume(TokenType::LeftParen, "Expect '(' after function name.");
+        let mut parameters: Vec<String> = vec![];
+        if !self.check(TokenType::RightParen) {
+            loop {
+                if parameters.len() >= 255 {
+                    panic!("Cannot have more than 255 parameters.");
+                }
+                parameters.push(self.consume(
+                    TokenType::Idenfitier("".to_string()),
+                    "Expect parameter name.",
+                ).lexeme.clone());
+                if !self.match_tokens(vec![TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+        self.consume(TokenType::RightParen, "Expect ')' after parameters.");
+        self.consume(TokenType::LeftBrace, "Expect '{' before function body.");
+        let body = self.block_statement()?;
+        return Ok(Box::new(FunctionStatement::new(identifier_lexeme, parameters, body)));
     }
 
     fn statement(&mut self) -> Result<dyn Statement> {
