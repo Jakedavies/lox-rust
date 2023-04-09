@@ -5,26 +5,24 @@ use crate::{environment::Environment, parser::Literal, interpreter::EvaluationEr
 use super::expressions::{Expression, ExpressionResult};
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AssignmentExpression {
     pub name: String,
-    child: Box<dyn Expression>,
+    child: Box<Expression>,
 }
 
 impl AssignmentExpression {
-    pub fn new(name: String, child: Box<dyn Expression>) -> Self {
+    pub fn new(name: String, child: Box<Expression>) -> Self {
         Self { name, child }
     }
-}
 
-impl Expression for AssignmentExpression {
-    fn evaluate(&self, environment: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
+    pub fn evaluate(&self, environment: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
         let v = self.child.evaluate(environment)?;
         environment.set(&self.name, v.clone())?;
         Ok(v)
     }
 
-    fn children(&self) -> Vec<&Box<dyn Expression>> {
+    pub fn children(&self) -> Vec<&Expression> {
         vec![&self.child]
     }
 

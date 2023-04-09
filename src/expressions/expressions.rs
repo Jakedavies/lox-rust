@@ -1,6 +1,8 @@
 use std::{any::Any, cell::RefCell, rc::Rc, fmt::{Display, Formatter}};
 
-use crate::{parser::Literal, interpreter::EvaluationError, environment::{self, Environment}, statement::Statement};
+use crate::{parser::Literal, interpreter::EvaluationError, environment::{self, Environment}, statement::{Executable, Statement}, tokens::Token};
+
+use super::{binary_expression::BinaryExpression, grouping_expression::GroupingExpression, unary_expression::UnaryExpression, literal_expression::LiteralExpression, call_expression::CallExpression, logical_expression::LogicalExpression, var_expression::VarExpression, assignment_expression::AssignmentExpression};
 
 
 /**
@@ -24,37 +26,35 @@ impl Callable for Clock {
 }
 */
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Callable {
     Clock,
-    UserDefined(Box<dyn Statement>, usize),
+    UserDefined(Box<Statement>, Vec<String>),
 }
 
-impl<'a> Clone for Callable {
-    fn clone(&self) -> Self {
-        match self {
-            Callable::Clock => Callable::Clock,
-            Callable::UserDefined(stmt, arity) => {
-                Callable::UserDefined(*stmt, *arity)
-            },
-        }
-    }
-}
 
 
 impl Callable {
-    pub fn arity(&self) -> &usize {
+    pub fn arity(&self) -> usize {
         match self {
-            Callable::Clock => &0,
-            Callable::UserDefined(stmt, arity) => arity,
+            Callable::Clock => 0,
+            Callable::UserDefined(_stmt, params) => params.len(),
         }
     }
 
     pub fn call(&self, env: &mut Environment, args: Vec<ExpressionResult>) -> Result<ExpressionResult, EvaluationError> {
+        
         match self {
             Callable::Clock => Ok(ExpressionResult::Literal(Literal::Number(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as f64))),
-            Callable::UserDefined(stmt, _) => { 
-                stmt.execute(env);
+            Callable::UserDefined(stmt, arg_names) => { 
+                for (i, arg) in args.iter().enumerate() {
+                    env.define(arg_names[i].clone(), arg.clone());
+                }
+
+                let result = stmt.execute(env);
+                if let Err(e) = result {
+                    return Err(e);
+                }
                 Ok(ExpressionResult::None)
             },
         }
@@ -106,9 +106,10 @@ impl Display for ExpressionResult {
 }
 
 
+/**
 pub trait Expression: std::fmt::Debug + Any{
     fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError>;
-    fn children(&self) -> Vec<&Box<dyn Expression>>;
+    fn children(&self) -> Vec<&Expression>;
     fn as_any(&self) -> &dyn Any;
 }
 
@@ -120,3 +121,45 @@ impl dyn Expression {
         self.as_any().downcast_ref()
     }
 }
+*/
+
+#[derive(Debug, Clone)]
+pub enum Expression {
+    Binary(BinaryExpression),
+    Grouping(GroupingExpression),
+    Unary(UnaryExpression),
+    Call(CallExpression),
+    Literal(LiteralExpression),
+    Logical(LogicalExpression),
+    Var(VarExpression),
+    Assignment(AssignmentExpression),
+}
+
+impl Expression {
+    pub fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
+        match self {
+            Expression::Binary(expr) => expr.evaluate(env),
+            Expression::Grouping(expr) => expr.evaluate(env),
+            Expression::Unary(expr) => expr.evaluate(env),
+            Expression::Call(expr) => expr.evaluate(env),
+            Expression::Literal(expr) => expr.evaluate(env),
+            Expression::Logical(expr) => expr.evaluate(env),
+            Expression::Var(expr) => expr.evaluate(env),
+            Expression::Assignment(expr) => expr.evaluate(env),
+        }
+    }
+
+    pub fn children(&self) -> Vec<&Expression> {
+        match self {
+            Expression::Binary(expr) => expr.children(),
+            Expression::Grouping(expr) => expr.children(),
+            Expression::Unary(expr) => expr.children(),
+            Expression::Call(expr) => expr.children(),
+            Expression::Literal(expr) => expr.children(),
+            Expression::Logical(expr) => expr.children(),
+            Expression::Var(expr) => expr.children(),
+            Expression::Assignment(expr) => expr.children(),
+        }
+    }
+}
+

@@ -46,7 +46,7 @@ print "Program exection took " + (clock() - l) + " seconds";
 
 
 fun printName(name) {
-  print "Your name is" + name;
+  print "Your name is " + name;
 }
 
 printName("jake");

@@ -2,27 +2,24 @@ use crate::{tokens::TokenType, environment::Environment, parser::Literal, interp
 
 use super::expressions::{Expression, ExpressionResult};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LogicalExpressionOperator {
     And,
     Or,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LogicalExpression {
-    pub left: Box<dyn Expression>,
-    pub right: Box<dyn Expression>,
+    pub left: Box<Expression>,
+    pub right: Box<Expression>,
     pub operator: LogicalExpressionOperator,
 }
 
 impl LogicalExpression {
-    pub fn new(left: Box<dyn Expression>, right: Box<dyn Expression>, operator: LogicalExpressionOperator) -> Self {
+    pub fn new(left:Box<Expression>, right: Box<Expression>, operator: LogicalExpressionOperator) -> Self {
         Self { left, right, operator }
     }
-}
-
-impl Expression for LogicalExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
+    pub fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
         let left = self.left.evaluate(env)?;
         match self.operator {
             LogicalExpressionOperator::And => {
@@ -40,7 +37,7 @@ impl Expression for LogicalExpression {
         Ok(ExpressionResult::Literal(Literal::Boolean(right.is_truthy())))
     }
 
-    fn children(&self) -> Vec<&Box<dyn Expression>> {
+    pub fn children(&self) -> Vec<&Expression> {
         vec![&self.left, &self.right]
     }
 

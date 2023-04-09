@@ -3,40 +3,38 @@ use crate::{tokens::Token, environment::Environment, parser::Literal, interprete
 use super::expressions::{Expression, ExpressionResult};
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CallExpression {
-    callee: Box<dyn Expression>,
+    callee: Box<Expression>,
     paren: Token,
-    arguments: Vec<Box<dyn Expression>>,
+    arguments: Vec<Box<Expression>>,
 }
 
 impl CallExpression {
-    pub fn new(callee: Box<dyn Expression>, paren: Token, arguments: Vec<Box<dyn Expression>>) -> Self {
+    pub fn new(callee: Box<Expression>, paren: Token, arguments: Vec<Box<Expression>>) -> Self {
         Self { callee, paren, arguments }
     }
-}
 
-impl Expression for CallExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
+    pub fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
         let callee = self.callee.evaluate(env)?;
         let mut args = Vec::new();
-        for arg in &self.arguments {
-            args.push(arg.evaluate(env)?);
-        }
-
+        let mut new_env = env.enclosed();
         match callee {
             ExpressionResult::Callable(callable) => {
-                let mut new_env = env.enclosed();
-                if args.len() != *callable.arity() {
+                if self.arguments.len() != callable.arity() {
                     return Err(EvaluationError::runtime_error(format!("Expected {} arguments but got {}", callable.arity(), args.len())))
                 }
+                for arg in &self.arguments {
+                    args.push(arg.evaluate(env)?);
+                }
+
                 callable.call(&mut new_env, args)
             }
             _ => Err(EvaluationError::runtime_error(format!("Can only call functions, not {:?}", callee)))
         }
     }
 
-    fn children(&self) -> Vec<&Box<dyn Expression>> {
+    pub fn children(&self) -> Vec<&Expression> {
         return vec![]
     }
 

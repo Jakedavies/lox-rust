@@ -3,21 +3,18 @@ use super::expressions::{Expression, ExpressionResult};
 use std::{rc::Rc, cell::RefCell};
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BinaryExpression {
     op: Token,
-    left: Box<dyn Expression>,
-    right: Box<dyn Expression>,
+    left: Box<Expression>,
+    right: Box<Expression>,
 }
 
 impl BinaryExpression {
-    pub fn new(op: Token, left: Box<dyn Expression>, right: Box<dyn Expression>) -> Self {
+    pub fn new(op: Token, left: Box<Expression>, right: Box<Expression>) -> Self {
         Self { op, left, right }
     }
-}
-
-impl Expression for BinaryExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
+    pub fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
         let left = self.left.evaluate(env)?;
         let right = self.right.evaluate(env)?;
 
@@ -76,7 +73,7 @@ impl Expression for BinaryExpression {
         }
     }
 
-    fn children(&self) -> Vec<&Box<dyn Expression>> {
+    pub fn children(&self) -> Vec<&Expression> {
         vec![&self.left, &self.right]
     }
 

@@ -1,26 +1,20 @@
 use crate::{parser::Literal, interpreter::EvaluationError, environment::Environment};
 use super::expressions::{Expression, ExpressionResult};
 
-use std::{rc::Rc, cell::RefCell};
-
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GroupingExpression {
-    child: Box<dyn Expression>,
+    child: Box<Expression>,
 }
 
 impl GroupingExpression {
-    pub fn new(child: Box<dyn Expression>) -> Self {
+    pub fn new(child: Box<Expression>) -> Self {
         Self { child }
     }
-}
-
-impl Expression for GroupingExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
+    pub fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
         self.child.evaluate(env)
     }
 
-    fn children(&self) -> Vec<&Box<dyn Expression>> {
+    pub fn children(&self) -> Vec<&Expression> {
         vec![&self.child]
     }
 

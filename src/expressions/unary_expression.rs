@@ -2,20 +2,18 @@ use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::Evaluation
 use super::expressions::Expression;
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct UnaryExpression {
     op: Token,
-    child: Box<dyn Expression>,
+    child: Box<Expression>,
 }
 
 impl UnaryExpression {
-    pub fn new(op: Token, child: Box<dyn Expression>) -> Self {
+    pub fn new(op: Token, child: Box<Expression>) -> Self {
         Self { op, child }
     }
-}
 
-impl Expression for UnaryExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
+    pub fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
         let child = self.child.evaluate(env)?;
         match &self.op.token_type {
             TokenType::Minus => {
@@ -39,7 +37,7 @@ impl Expression for UnaryExpression {
         }
     }
 
-    fn children(&self) -> Vec<&Box<dyn Expression>> {
+    pub fn children(&self) -> Vec<&Expression> {
         vec![&self.child]
     }
 

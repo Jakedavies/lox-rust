@@ -1,6 +1,7 @@
 use std::{rc::Rc, cell::RefCell};
 
 use expressions::expressions::{Expression, ExpressionResult, Callable};
+use statement::Statement;
 
 mod tokens;
 mod scanner;
@@ -11,7 +12,7 @@ mod interpreter;
 mod statement;
 mod environment;
 
-fn interpret(statements: Vec<Box<dyn statement::Statement>>) {
+fn interpret(statements: Vec<Box<Statement>>) {
     let env = &mut environment::Environment::new();
 
     // Define built-in functions
@@ -34,14 +35,14 @@ fn run(source: String) {
     let mut parser = parser::Parser::new(tokens);
     let tree = parser.parse();
 
-    println!("{:?}", tree);
+    //println!("{:?}", tree);
 
     // print the result
     interpret(tree)
 }
 
 // helper method for debugging AST
-fn print_ast(node: &Box<dyn Expression>, indent: usize) {
+fn print_ast(node: &Expression, indent: usize) {
     // print the node
     for _ in 0..indent {
         print!("  ");

@@ -2,7 +2,7 @@ use crate::{tokens::{Token, TokenType}, parser::Literal, interpreter::Evaluation
 use super::expressions::{Expression, ExpressionResult};
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LiteralExpression {
     value: Literal,
 }
@@ -11,14 +11,12 @@ impl LiteralExpression {
     pub fn new(value: Literal) -> Self {
         Self { value }
     }
-}
 
-impl Expression for LiteralExpression {
-    fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
+    pub fn evaluate(&self, env: &mut Environment) -> Result<ExpressionResult, EvaluationError> {
         Ok(ExpressionResult::Literal(self.value.clone()))
     }
 
-    fn children(&self) -> Vec<&Box<dyn Expression>> {
+    pub fn children(&self) -> Vec<&Expression> {
         vec![]
     }
 
